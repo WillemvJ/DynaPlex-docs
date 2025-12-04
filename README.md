@@ -1,6 +1,6 @@
-# DynaPlex Docs
+# DynaPlex 2 Docs
 
-Documentation website for DynaPlex 2.*.* (Python-only version).
+Documentation website for DynaPlex 2 (Python-only version).
 
 This documentation was migrated from the DynaPlexPrivate repository's docs directory. The structure and configuration files have been set up for Python-only documentation.
 

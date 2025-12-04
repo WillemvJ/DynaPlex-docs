@@ -6,7 +6,7 @@ navigate to root of DynaPlex-Docs
 py -m poetry lock
 
 # 2. Install dependencies
-py -m poetry install --with docs --no-root
+py -m poetry install --with docs
 
 # 3. Build docs
 py -m poetry run sphinx-build -M html source build

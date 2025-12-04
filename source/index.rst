@@ -1,11 +1,11 @@
 .. figure:: assets/images/logo.png
-   :alt: DynaPlex logo
+   :alt: DynaPlex 2 logo
    :figwidth: 100%
 
-DynaPlex is a Python library for solving Markov Decision Problems and similar models (POMDP, HMM). It supports 
-deep reinforcement learning, approximate dynamic programming, classical parameterized policies, and exact methods based on policy and value iteration. Models in DynaPlex are written in Python, and exposed via a generic and vectorized interface. 
+DynaPlex 2 is a Python library for solving Markov Decision Problems and similar models (POMDP, HMM). It supports 
+deep reinforcement learning, approximate dynamic programming, classical parameterized policies, and exact methods based on policy and value iteration. Models in DynaPlex 2 are written in Python, and exposed via a generic and vectorized interface. 
 
-DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc. 
+DynaPlex 2 focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc. 
 
 .. note::
 
@@ -37,38 +37,7 @@ Contents
 
 .. toctree::
    :maxdepth: 0
-   :caption: Reference
-
-   reference/model_ref
-   reference/policy_ref
-   reference/exact_ref
-   reference/event
-   reference/mdp
-   reference/state
-   reference/tester
-
-.. toctree::
-   :maxdepth: 0
-   :caption: Algorithms
-
-   algorithms/algorithms
-
-.. toctree::
-   :maxdepth: 0
    :caption: Getting help and Contributing
 
    community/contributing
    community/getting_help
-
-.. toctree::
-   :maxdepth: 0
-   :caption: Troubleshooting
-
-   faq/faq
-
-
-.. toctree::
-   :maxdepth: 0
-   :caption: Legacy
-
-   legacy/legacy

@@ -13,7 +13,7 @@ import tomli
 
 now = datetime.date.today()
 
-project = "DynaPlex"
+project = "DynaPlex 2"
 authors = "DynaPlex contributors"
 copyright = f"2023 - {now.year}, {authors}"
 
@@ -73,8 +73,8 @@ html_theme_options = {
     "palette": [
         {
             "media": "(prefers-color-scheme: light)",
-            "primary": "DarkCyan",
-            "accent": "CornflowerBlue",
+            "primary": "Indigo",
+            "accent": "DeepPurple",
             "scheme": "default",
             "toggle": {
                 "icon": "material/lightbulb-outline",
@@ -83,8 +83,8 @@ html_theme_options = {
         },
         {
             "media": "(prefers-color-scheme: dark)",
-            "primary": "DarkCyan",
-            "accent": "CornflowerBlue",
+            "primary": "Indigo",
+            "accent": "DeepPurple",
             "scheme": "slate",
             "toggle": {
                 "icon": "material/lightbulb",
