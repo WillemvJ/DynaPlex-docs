@@ -57,7 +57,7 @@ html_theme = "sphinx_immaterial"
 html_logo = "assets/images/icon.png"
 html_theme_options = {
     "site_url": "https://dynaplex.nl/",
-    "repo_url": "https://github.com/WillemvJ/DynaPlexPrivate/",
+    "repo_url": "https://github.com/dynaplex/dynaplex-docs/",
     "icon": {
         "repo": "fontawesome/brands/github",
         "edit": "material/file-edit-outline",
