@@ -14,7 +14,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.13,<4.0"
+python = "^3.11,<4.0"
 tomli = "^2.0.1"
 
 [tool.poetry.group.docs]
