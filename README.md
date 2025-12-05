@@ -4,6 +4,6 @@ Documentation website for DynaPlex 2. DynaPlex 2 is a completely redesigned libr
 
 ## Setup
 
-See `build_docs.md` for more details.
+See `dev.md` for more details.
 
 
