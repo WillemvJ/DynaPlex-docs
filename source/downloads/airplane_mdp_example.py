@@ -366,29 +366,6 @@ def main() -> None:
  
     # Run simulation
     simulate_episode(mdp, policy, seed=42)
-    
-    print()
-    print("=" * 60)
-    
-    # Example: Custom policy configuration
-    print("\n\nExample with custom policy:")
-    print("=" * 60)
-    aggressive_policy = SimplePolicy(
-        mdp=mdp,
-        seat_threshold=3,
-        days_threshold=5,
-        min_price_low_days=1500.0,
-        min_price_high_days=2500.0,
-    )
-    print("Aggressive policy (accepts more customers):")
-    print(f"  Seat threshold: {aggressive_policy.seat_threshold}")
-    print(f"  Min price (low days): €{aggressive_policy.min_price_low_days:.0f}")
-    simulate_episode(mdp, aggressive_policy, seed=42)
-    print("=" * 60)
-    
-   
-    
- 
 
 if __name__ == "__main__":
     main()
