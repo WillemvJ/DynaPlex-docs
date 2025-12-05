@@ -26,6 +26,7 @@ Contents
 
    tutorial/airplane_mdp
    tutorial/policy
+   tutorial/airplane_mdp_python_code
 
 .. toctree::
    :maxdepth: 0

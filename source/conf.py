@@ -55,6 +55,7 @@ python_use_unqualified_type_names = True
 # -- Options for HTML output
 html_theme = "sphinx_immaterial"
 html_logo = "assets/images/icon.png"
+html_static_path = ['_static']
 html_theme_options = {
     "site_url": "https://dynaplex.nl/",
     "repo_url": "https://github.com/dynaplex/dynaplex-docs/",

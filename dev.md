@@ -30,3 +30,12 @@ py -m poetry run sphinx-build -M html source build -E
 ```bash
 start build\html\index.html
 ```
+
+or, to view it served:
+
+```bash
+cd build/html
+python -m http.server 8000
+```
+
+Then open http://localhost:8000 in your browser
