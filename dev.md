@@ -1,7 +1,7 @@
 # Development Setup
 
 ## Prerequisites
-
+ 
 1. Install Poetry (e.g. with `py`)
 2. Navigate to the root of `DynaPlex-Docs`
 
