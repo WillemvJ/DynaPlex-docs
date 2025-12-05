@@ -22,7 +22,7 @@ py -m poetry install --with docs
 ### 3. Build docs
 
 ```bash
-py -m poetry run sphinx-build -M html source build
+py -m poetry run sphinx-build -M html source build -E
 ```
 
 ### 4. View the result

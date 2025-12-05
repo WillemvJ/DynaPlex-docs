@@ -25,7 +25,7 @@ Key Components of an MDP
    :alt: MDP illustration
 
 DynaPlex builds on the MDP-EI (MDP with exogenous inputs) framework, which is illustrated below. Here, :math:`s_t` represents the state at time :math:`t`, :math:`\pi` represent the policy, :math:`a_t` the decision, and :math:`c_t` the costs, the exogenous event is denoted by :math:`\xi_t` and the transition function is :math:`f`.
-For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.15122>`_ and `A unified framework for stochastic optimization <https://doi.org/10.1016/j.ejor.2018.07.014>`_
+For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.15122>`_, `A unified framework for stochastic optimization <https://doi.org/10.1016/j.ejor.2018.07.014>`_. See also the published version of the Deep Controlled Learning paper: `published version <https://www.sciencedirect.com/science/article/pii/S0377221725000463>`_.
 
 .. figure:: ../assets/images/mdpei.png
    :alt: MDP-EI illustration
@@ -53,6 +53,3 @@ For further exploration of Markov Decision Processes, we recommend the following
 
 3. "Reinforcement Learning and Stochastic Optimization" by Warren B. Powell.
    - A valuable resource that explores the intersection of reinforcement learning and stochastic optimization, providing insights into advanced techniques.
-
-4. "Reinforcement Learning: An Introduction" by Richard S. Sutton and Andrew G. Barto.
-   - This comprehensive book provides an in-depth introduction to reinforcement learning, including MDPs and various algorithms used for solving them.
