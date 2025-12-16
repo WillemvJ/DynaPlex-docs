@@ -25,7 +25,6 @@ Contents
    :caption: Tutorial
 
    tutorial/airplane_mdp
-   tutorial/policy
    tutorial/airplane_mdp_python_code
 
 .. toctree::

@@ -1,8 +1,7 @@
 """
-Airplane MDP Example
-
-This demonstrates the Python API for defining an MDP in DynaPlex 2.
-The airplane MDP models a flight ticket selling scenario with capacity constraints.
+This demonstrates the definition of an MDP and a policy in DynaML - the dynamic modelling language
+that supports DynaPlex 2.0. 
+Defining an MDP like this is a starting point for various algorithms. 
 """
 
 from __future__ import annotations
@@ -68,43 +67,16 @@ class AirplaneMDP:
         Raises:
             ValueError: If any validation checks fail
         """
-        # NOTE:  __init__ is never called by the dynaplex compiler, so we can use any valid cpython code here. 
+        # NOTE:  __init__ on the MDP class itself is never called by the dynaplex compiler, so we can use any valid cpython code here
+        #  but the class must be a dataclass, and other functions need to be valid  DynaML code.  
         
-
-
-        # Validate initial_days
-        if initial_days <= 0:
-            raise ValueError(f"initial_days must be positive, got {initial_days}")
+        # Validating parameters
+        assert initial_days > 0 and initial_seats > 0
+        assert prices_per_customer_type and all(price > 0 for price in prices_per_customer_type)
+        assert customer_type_probs and len(customer_type_probs) == len(prices_per_customer_type)
+        assert all(prob >= 0 for prob in customer_type_probs) and np.isclose(sum(customer_type_probs), 1.0, atol=1e-6)
         
-        # Validate initial_seats
-        if initial_seats <= 0:
-            raise ValueError(f"initial_seats must be positive, got {initial_seats}")
-        
-        # Validate prices_per_customer_type
-        if not prices_per_customer_type:
-            raise ValueError("prices_per_customer_type cannot be empty")
-        if any(price <= 0 for price in prices_per_customer_type):
-            raise ValueError(f"All prices must be positive, got {prices_per_customer_type}")
-        
-        # Validate customer_type_probs
-        if not customer_type_probs:
-            raise ValueError("customer_type_probs cannot be empty")
-        if len(customer_type_probs) != len(prices_per_customer_type):
-            raise ValueError(
-                f"Length mismatch: {len(customer_type_probs)} probabilities "
-                f"for {len(prices_per_customer_type)} customer types"
-            )
-        if any(prob < 0 for prob in customer_type_probs):
-            raise ValueError(f"All probabilities must be non-negative, got {customer_type_probs}")
-        
-        prob_sum = sum(customer_type_probs)
-        if not np.isclose(prob_sum, 1.0, atol=1e-6):
-            raise ValueError(
-                f"Probabilities must sum to 1.0, got {prob_sum} "
-                f"(probabilities: {customer_type_probs})"
-            )
-        
-        # All validations passed, set attributes
+        # Set attributes
         #NOTE: only set attributes that are part of the annotation.
         self.initial_days = initial_days
         self.initial_seats = initial_seats
@@ -113,18 +85,12 @@ class AirplaneMDP:
     
     def get_initial_state(self, rng: Generator) -> State:
         """
-        Generate the initial state of the MDP.
+        Generates and returns an initial state of the MDP.
         
         Args:
             rng: NumPy random generator to support random initial state.
-            
-        Returns:
-            Initial state for the MDP. 
         """
-        # NOTE: function get_initial_state and any functions that it calls must use only
-        # constructs that are part of the DynaPlex DSL.       
-        # all used and constructed classes must be dataclasses. etc. 
-
+        # NOTE: function get_initial_state and any functions that it calls must be valid DynaML code.
         return State(
             remaining_days=self.initial_days,
             remaining_seats=self.initial_seats,
@@ -143,8 +109,7 @@ class AirplaneMDP:
         Returns:
             Cost incurred (in this model, no cost for event transitions)
         """
-        # NOTE: function modify_state_with_event and any functions that it calls must use only
-        # constructs that are part of the DynaPlex DSL.  
+        # NOTE: function modify_state_with_event and any functions that it calls must be valid DynaML code.
 
         # Sample customer type from discrete distribution
         # NOTE: Never use np.random directly, use the rng parameter instead!
@@ -152,23 +117,20 @@ class AirplaneMDP:
             len(self.customer_type_probs),
             p=self.customer_type_probs,
         )
-        state.price_offered_per_seat = self.prices_per_customer_type[customer_type]
-        
+        state.price_offered_per_seat = self.prices_per_customer_type[customer_type]        
         
         # Check termination conditions
         if state.remaining_days == 0 or state.remaining_seats == 0:
             state.category = StateCategory.FINAL
         else:
-            state.category = StateCategory.AWAIT_ACTION
-
-        
+            # After processing event, we await an action - 
+            # the agent must decide whether to accept or reject the customer.
+            state.category = StateCategory.AWAIT_ACTION        
         return 0.0  # No cost for event transitions
     
     def modify_state_with_action(self, state: State, action: int) -> float:
         """
         Apply an action to the state (modify in place).
-        
-        After this method, state.category will be AWAIT_EVENT.
         
         Args:
             state: Current state (modified in place)
@@ -176,67 +138,52 @@ class AirplaneMDP:
             
         Returns:
             Cost incurred (negative revenue for accepted customers)
-            
-        Raises:
-            ValueError: If action is invalid or sells when no seats available
         """
-        # NOTE: function modify_state_with_action and any functions that it calls must use only
-        # constructs that are part of the DynaPlex DSL.  
+        # NOTE: this function (and any functions that it calls) must be valid DynaML code.
 
-        # NOTE: do not attempt to generate random numbers here. And random transitiions must happen 
+        # NOTE: do _not_ attempt to generate random numbers here. Any random transitions must happen 
         # in modify_state_with_event, using the rng parameter passed in there. 
-
-        if state.remaining_days == 0:
-            raise ValueError("Cannot take action when no days remain")
         
-        # After processing action, we await an event
+        assert state.remaining_days > 0 
+        state.remaining_days -= 1
+
+        # After processing action, we await the next event - customer arrival. 
         state.category = StateCategory.AWAIT_EVENT
         
+
         if action == 0:
             # Reject customer
-            state.remaining_days -= 1
             state.price_offered_per_seat = 0.0
             return 0.0
         
         elif action == 1:
             # Accept customer
-            if state.remaining_seats <= 0:
-                raise ValueError("Cannot sell seat when none available")
-            
-            state.remaining_seats -= 1
-            state.remaining_days -= 1
-            
-            # DynaPlex uses cost-based formulation (cost = -reward)
-            cost = -state.price_offered_per_seat
+            # Sell the seat to the customer. 
+            state.remaining_seats -= 1            
+            # Reset the price offered per seat to 0, awaiting the next event. 
             state.price_offered_per_seat = 0.0
-            
+            # Use a cost-based formulation (cost = -reward)
+            cost = -state.price_offered_per_seat
             return cost
         
         else:
-            raise ValueError(
-                f"Invalid action: {action}. Must be 0 (reject) or 1 (accept)"
-            )
+            assert False, f"Invalid action: Must be 0 (reject) or 1 (accept)"
     
     def is_allowed_action(self, state: State, action: int) -> bool:
         """
         Check if an action is allowed in the current state.
-        
-        Args:
-            state: Current state
-            action: Action to check
-            
+
         Returns:
             True if action is allowed
         """
-        # NOTE: function is_allowed_action and any functions that it calls must use only
-        # constructs that are part of the DynaPlex DSL.  
+        # NOTE: function is_allowed_action must be valid DynaML code.   
 
         if action == 0:
             return True
         elif action == 1:
             return state.remaining_seats > 0
         else:
-            return False
+            assert False, f"Invalid action: Must be 0 (reject) or 1 (accept)"
 
 
 @dataclass
@@ -255,23 +202,16 @@ class SimplePolicy:
     
     def get_action(self, state: State) -> int:
         """
-        Determine which action to take given the current state.
-        
-        Policy rules:
-        1. If more than seat_threshold seats left: sell to all customers
-        2. If 1-seat_threshold seats and <= days_threshold remaining: 
-           sell to customers paying >= min_price_low_days
-        3. If 1-seat_threshold seats and > days_threshold remaining: 
-           sell to customers paying >= min_price_high_days
-        4. If no seats: reject all
-        
+        Determine which action to take given the current state. Simple heuristic policy.
+
+
+        # NOTE: this function must be valid DynaML code.
         Args:
             state: Current state
             
         Returns:
             Action (0=reject, 1=accept)
         """
-        # Rule 4: No seats available
         if state.remaining_seats == 0:
             return 0
         
@@ -280,12 +220,12 @@ class SimplePolicy:
             return 1
         
         # Rule 2: 1-seat_threshold seats and <= days_threshold remaining
-        if state.remaining_days <= self.days_threshold:
-            return 1 if state.price_offered_per_seat >= self.min_price_low_days else 0
+        if state.remaining_days <= self.days_threshold and state.price_offered_per_seat >= self.min_price_low_days:
+            return 1
         
         # Rule 3: 1-seat_threshold seats and > days_threshold remaining
-        if state.remaining_days > self.days_threshold:
-            return 1 if state.price_offered_per_seat >= self.min_price_high_days else 0
+        if state.remaining_days > self.days_threshold and state.price_offered_per_seat >= self.min_price_high_days:
+            return 1
         
         return 0
 
@@ -293,6 +233,8 @@ class SimplePolicy:
 def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) -> float:
     """
     Simulate a single episode using the given policy.
+
+    This loop illustrates the interaction between the MDP, state, and policy. It is not needed for the API.
     
     The simulation loop continues until state.category == FINAL.
     On each iteration, it dispatches based on the state category:
@@ -360,8 +302,6 @@ def main() -> None:
     # Create policy with default parameters
     policy = SimplePolicy(mdp=mdp)
 
-    #eventually we will be able to run DCL and other algorithms (in C++ backend) based on this:
-    #agent_list = dynaplex.train_dcl(mdp, policy)
     
  
     # Run simulation

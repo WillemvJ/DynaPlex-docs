@@ -27,7 +27,13 @@ The Components of the MDP
 .. note::
 	DynaPlex is costs based, so for this MDP we consider negative rewards.
 
-5. **Policy (π):** Apart from the RL-algorithms available through DynaPlex, you can supply your own policy, which you could use as benchmark.
+
+Policy
+------
+
+A closely related concept to MDPs are policies. A policy is a function that maps a state to an action. 
+
+**Policy (π):** Apart from the RL-algorithms available through DynaPlex, you can supply your own policy, which you could use as benchmark.
 
 For this MDP we will implement a simple rule based benchmark:
 
