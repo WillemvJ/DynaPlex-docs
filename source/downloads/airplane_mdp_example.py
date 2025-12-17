@@ -111,15 +111,13 @@ class AirplaneMDP:
         """
         # NOTE: function modify_state_with_event and any functions that it calls must be valid DynaML code.
 
-        # Sample customer type from discrete distribution
-        # So rng.choice works the same as np.random.choice; it essentially is the 
-        # modern/recommended way to generate random numbers in numpy. 
-        # NOTE: Never use np.random directly, use the rng parameter instead!
-        customer_type = rng.choice(
-            len(self.customer_type_probs),
-            p=self.customer_type_probs,
+        # rng Generator is the modern/recommended way to generate random numbers in numpy. 
+        # rng.choice works the same as np.random.choice; 
+        # it chooses a specific price in the list of prices, weighted by the customer type probabilities.
+        state.price_offered_per_seat = rng.choice(
+           self.prices_per_customer_type,
+           p=self.customer_type_probs,
         )
-        state.price_offered_per_seat = self.prices_per_customer_type[customer_type]        
         
         # After processing event, we await an action - 
         # the agent must decide whether to accept or reject the customer.
