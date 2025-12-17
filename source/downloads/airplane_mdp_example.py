@@ -27,7 +27,7 @@ class State:
     """
     remaining_days: int
     remaining_seats: int
-    price_offered_per_seat: float
+    price_offered_per_seat: int
     # this member must always be defined on any dynaplex MDP state:
     category: StateCategory = StateCategory.AWAIT_EVENT
     
@@ -45,14 +45,14 @@ class AirplaneMDP:
     # MDP configuration (instance attributes, no defaults)
     initial_days: int
     initial_seats: int
-    prices_per_customer_type: list[float]
+    prices_per_customer_type: list[int]
     customer_type_probs: list[float]
     
     def __init__(
         self,
         initial_days: int,
         initial_seats: int,
-        prices_per_customer_type: list[float],
+        prices_per_customer_type: list[int],
         customer_type_probs: list[float],
     ):
         """
@@ -94,7 +94,7 @@ class AirplaneMDP:
         return State(
             remaining_days=self.initial_days,
             remaining_seats=self.initial_seats,
-            price_offered_per_seat=0.0,
+            price_offered_per_seat=0,
             category=StateCategory.AWAIT_EVENT,
         )
     
@@ -112,6 +112,8 @@ class AirplaneMDP:
         # NOTE: function modify_state_with_event and any functions that it calls must be valid DynaML code.
 
         # Sample customer type from discrete distribution
+        # So rng.choice works the same as np.random.choice; it essentially is the 
+        # modern/recommended way to generate random numbers in numpy. 
         # NOTE: Never use np.random directly, use the rng parameter instead!
         customer_type = rng.choice(
             len(self.customer_type_probs),
@@ -119,13 +121,9 @@ class AirplaneMDP:
         )
         state.price_offered_per_seat = self.prices_per_customer_type[customer_type]        
         
-        # Check termination conditions
-        if state.remaining_days == 0 or state.remaining_seats == 0:
-            state.category = StateCategory.FINAL
-        else:
-            # After processing event, we await an action - 
-            # the agent must decide whether to accept or reject the customer.
-            state.category = StateCategory.AWAIT_ACTION        
+        # After processing event, we await an action - 
+        # the agent must decide whether to accept or reject the customer.
+        state.category = StateCategory.AWAIT_ACTION        
         return 0.0  # No cost for event transitions
     
     def modify_state_with_action(self, state: State, action: int) -> float:
@@ -148,22 +146,24 @@ class AirplaneMDP:
         state.remaining_days -= 1
 
         # After processing action, we await the next event - customer arrival. 
-        state.category = StateCategory.AWAIT_EVENT
-        
+        if state.remaining_days == 0:
+            state.category = StateCategory.FINAL
+        else:
+            state.category = StateCategory.AWAIT_EVENT
 
         if action == 0:
             # Reject customer
-            state.price_offered_per_seat = 0.0
+            state.price_offered_per_seat = 0
             return 0.0
         
         elif action == 1:
             # Accept customer
             # Sell the seat to the customer. 
             state.remaining_seats -= 1            
-            # Reset the price offered per seat to 0, awaiting the next event. 
-            state.price_offered_per_seat = 0.0
             # Use a cost-based formulation (cost = -reward)
             cost = -state.price_offered_per_seat
+            # Reset the price offered per seat to 0, awaiting the next event. 
+            state.price_offered_per_seat = 0
             return cost
         
         else:
@@ -197,8 +197,8 @@ class SimplePolicy:
     mdp: AirplaneMDP
     seat_threshold: int = 5
     days_threshold: int = 9
-    min_price_low_days: float = 2000.0
-    min_price_high_days: float = 3000.0
+    min_price_low_days: int = 2000
+    min_price_high_days: int = 3000
     
     def get_action(self, state: State) -> int:
         """
@@ -230,7 +230,7 @@ class SimplePolicy:
         return 0
 
 
-def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) -> float:
+def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42, verbose: bool = True) -> float:
     """
     Simulate a single episode using the given policy.
 
@@ -245,6 +245,7 @@ def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) 
         mdp: MDP instance
         policy: Policy instance to use for action selection
         seed: Random seed (keyword-only)
+        verbose: Whether to print detailed output during simulation (keyword-only)
         
     Returns:
         Total cost (negative revenue) for the episode
@@ -258,33 +259,39 @@ def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) 
     total_cost = 0.0
     step = 0
     
-    print(f"Initial state: {state}")
-    print("-" * 80)
+    if verbose:
+        print(f"Initial state: {state}")
+        print("-" * 80)
     
     while state.category != StateCategory.FINAL:
         if state.category == StateCategory.AWAIT_EVENT:
             # Generate customer arrival event
             cost = mdp.modify_state_with_event(state, rng)
             total_cost += cost
-            print(f"  State after event: {state}")
+            if verbose:
+                print(f"  State after event: {state}")
             
         elif state.category == StateCategory.AWAIT_ACTION:
             # Apply policy and execute action
             action = policy.get_action(state)
-            action_name = "ACCEPT" if action == 1 else "REJECT"
             
-            print(f"Step {step}: ACTION {action_name} ({action})")
+            if verbose:
+                action_name = "ACCEPT" if action == 1 else "REJECT"
+                print(f"Step {step}: ACTION {action_name} ({action})")
             
             cost = mdp.modify_state_with_action(state, action)
             total_cost += cost
-            print(f"  State after action: {state}")
+            
+            if verbose:
+                print(f"  State after action: {state}")
             step += 1
         
         else:
             raise RuntimeError(f"Unexpected state category: {state.category}")
     
-    print("-" * 80)
-    print(f"Episode finished: {step} steps, total revenue: €{-total_cost:.0f}")
+    if verbose:
+        print("-" * 80)
+        print(f"Episode finished: {step} steps, total revenue: €{-total_cost:.0f}")
     
     return total_cost
 
@@ -295,17 +302,45 @@ def main() -> None:
     mdp = AirplaneMDP(
         initial_days=25,
         initial_seats=10,
-        prices_per_customer_type=[3000.0, 2000.0, 1000.0],
+        prices_per_customer_type=[3000, 2000, 1000],
         customer_type_probs=[0.4, 0.3, 0.3],
     )
     
     # Create policy with default parameters
     policy = SimplePolicy(mdp=mdp)
 
+    # Run single simulation with detailed output
+    print("=" * 80)
+    print("DETAILED SIMULATION (Single Episode)")
+    print("=" * 80)
+    simulate_episode(mdp, policy, seed=42, verbose=True)
     
- 
-    # Run simulation
-    simulate_episode(mdp, policy, seed=42)
+    # Run 1000 simulations to estimate average performance
+    print("\n" + "=" * 80)
+    print("PERFORMANCE EVALUATION (1000 Episodes)")
+    print("=" * 80)
+    
+    num_simulations = 1000
+    total_costs = []
+    
+    for i in range(num_simulations):
+        cost = simulate_episode(mdp, policy, seed=i, verbose=False)
+        total_costs.append(cost)
+    
+    # Calculate statistics (remember: cost = -revenue, so profit = -cost)
+    average_cost = np.mean(total_costs)
+    average_profit = -average_cost
+    # standard error of the mean
+    std_error = np.std(total_costs) / np.sqrt(num_simulations)
+    min_profit = -np.max(total_costs)
+    max_profit = -np.min(total_costs)
+    
+    print(f"Number of simulations: {num_simulations}")
+    print(f"Average profit: €{average_profit:.2f}")
+    print(f"Standard error of the mean: €{std_error:.2f}")
+    print(f"Min profit: €{min_profit:.2f}")
+    print(f"Max profit: €{max_profit:.2f}")
+    print("=" * 80)
 
 if __name__ == "__main__":
     main()
