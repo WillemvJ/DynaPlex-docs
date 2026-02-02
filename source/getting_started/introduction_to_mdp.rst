@@ -15,17 +15,16 @@ Key Components of an MDP
 
 2. **Actions (A):** The set of all possible moves or decisions that the agent can make in a given state.
 
-3. **Transition Probabilities (P):** The probabilities that dictate the likelihood of transitioning from one state to another when a specific action is taken.
+3. **Costs (C):** The numerical values associated with state-action pairs, indicating the immediate cost of taking a particular action in a specific state. Note that a reward is a negative cost. 
 
-4. **Rewards (R):** The numerical values associated with state-action pairs, indicating the immediate benefit or cost of taking a particular action in a specific state.
+A key related concept is that of a policy, which specifies the action to take in each state:
 
-5. **Policy (π):** A strategy that defines the agent's behavior, specifying which action to take in each state.
-
-.. figure:: ../assets/images/mdp_illustration.png
-   :alt: MDP illustration
+4. **Policy (π):** A strategy that specifies which action to take in each state.
 
 DynaPlex builds on the MDP-EI (MDP with exogenous inputs) framework, which is illustrated below. Here, :math:`s_t` represents the state at time :math:`t`, :math:`\pi` represent the policy, :math:`a_t` the decision, and :math:`c_t` the costs, the exogenous event is denoted by :math:`\xi_t` and the transition function is :math:`f`.
 For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.15122>`_, `A unified framework for stochastic optimization <https://doi.org/10.1016/j.ejor.2018.07.014>`_. See also the published version of the Deep Controlled Learning paper: `published version <https://www.sciencedirect.com/science/article/pii/S0377221725000463>`_.
+
+
 
 .. figure:: ../assets/images/mdpei.png
    :alt: MDP-EI illustration

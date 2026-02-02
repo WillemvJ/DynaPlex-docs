@@ -1,26 +1,36 @@
 """
-This demonstrates the definition of an MDP and a policy in DynaML - the dynamic modelling language
-that supports DynaPlex 2.0. 
-Defining an MDP like this is a starting point for various algorithms. 
+This demonstrates the definition of an MDP and a policy in DynaPlex 2.0:
+1. Defining an MDP in DynaML
+2. Defining a policy in DynaML
+3. Validating the MDP and policy
+4. Training a policy with PPO
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, auto
 
 import numpy as np
-from numpy.random import Generator
+from numpy.typing import NDArray
+
+from dynaplex import PPOTrainerConfig, PPOTrainer
+from dynaplex.modelling import (
+    Features,
+    HorizonType,
+    StateCategory,
+    TrajectoryContext,
+    assert_mdp,
+    assert_policy_for_mdp,
+    discover_num_features,
+)
+from dynaplex.utilities import simulate_episodes
 
 
-class StateCategory(Enum):
-    """State category determines which operation should be called next."""
-    AWAIT_EVENT = auto()
-    AWAIT_ACTION = auto()
-    FINAL = auto()
+# ============================================================================
+# MDP Definition
+# ============================================================================
 
-
-@dataclass
+@dataclass(slots=True)
 class State:
     """
     State representation for the airplane MDP.
@@ -32,7 +42,7 @@ class State:
     category: StateCategory = StateCategory.AWAIT_EVENT
     
 
-@dataclass(init=False)
+@dataclass(init=False, slots=True)
 class AirplaneMDP:
     """
     Airplane ticket selling MDP.
@@ -40,13 +50,16 @@ class AirplaneMDP:
     Actions:
         0: Reject customer
         1: Accept customer (sell seat)
-    """
-    
+    """    
     # MDP configuration (instance attributes, no defaults)
     initial_days: int
     initial_seats: int
     prices_per_customer_type: list[int]
+    average_price: float
     customer_type_probs: list[float]
+    num_actions: int
+    horizon_type: HorizonType
+    num_features: int	
     
     def __init__(
         self,
@@ -77,18 +90,27 @@ class AirplaneMDP:
         assert all(prob >= 0 for prob in customer_type_probs) and np.isclose(sum(customer_type_probs), 1.0, atol=1e-6)
         
         # Set attributes
-        #NOTE: only set attributes that are part of the annotation.
+        #NOTE: ensure all attributes are set that are part of the annotation!
         self.initial_days = initial_days
         self.initial_seats = initial_seats
         self.prices_per_customer_type = prices_per_customer_type
+        self.average_price = sum(prices_per_customer_type) / len(prices_per_customer_type)
         self.customer_type_probs = customer_type_probs
+
+        # number of actions in the MDP that are potentially valid. 
+        self.num_actions = 2  # 0: Reject, 1: Accept
+        self.horizon_type = HorizonType.FINITE
+
+        # Discover the number of features; should be called last in __init__. 
+        # will discover that there are 3 features: remaining_days, remaining_seats, price_offered_per_seat
+        self.num_features = discover_num_features(self)
     
-    def get_initial_state(self, rng: Generator) -> State:
+    def get_initial_state(self, context: TrajectoryContext) -> State:
         """
         Generates and returns an initial state of the MDP.
         
         Args:
-            rng: NumPy random generator to support random initial state.
+            context.rng: NumPy random generator to support random initial state.
         """
         # NOTE: function get_initial_state and any functions that it calls must be valid DynaML code.
         return State(
@@ -98,42 +120,36 @@ class AirplaneMDP:
             category=StateCategory.AWAIT_EVENT,
         )
     
-    def modify_state_with_event(self, state: State, rng: Generator) -> float:
+    def modify_state_with_event(self, state: State, context: TrajectoryContext) -> None:
         """
         Generate a (customer arrival) event and modify state in place.
        
         Args:
             state: Current state (modified in place)
-            rng: NumPy random generator for sampling customer type
-            
-        Returns:
-            Cost incurred (in this model, no cost for event transitions)
+            context: Trajectory context containing rng and cumulative_cost
         """
         # NOTE: function modify_state_with_event and any functions that it calls must be valid DynaML code.
 
-        # rng Generator is the modern/recommended way to generate random numbers in numpy. 
-        # rng.choice works the same as np.random.choice; 
-        # it chooses a specific price in the list of prices, weighted by the customer type probabilities.
-        state.price_offered_per_seat = rng.choice(
+        # rng Generator -> modern/recommended approach to generate random numbers in numpy. 
+        # rng.choice == np.random.choice:
+        state.price_offered_per_seat = context.rng.choice(
            self.prices_per_customer_type,
            p=self.customer_type_probs,
         )
         
-        # After processing event, we await an action - 
-        # the agent must decide whether to accept or reject the customer.
+        # Next, the agent must decide whether to accept or reject the customer.
         state.category = StateCategory.AWAIT_ACTION        
-        return 0.0  # No cost for event transitions
+        # time elapsed increases by 1 (do this in every modify_state_with_event unless you know what you are doing):
+        context.time_elapsed += 1
     
-    def modify_state_with_action(self, state: State, action: int) -> float:
+    def modify_state_with_action(self, state: State, context: TrajectoryContext, action: int) -> None:
         """
         Apply an action to the state (modify in place).
         
         Args:
             state: Current state (modified in place)
-            action: Action to take (0=reject, 1=accept)
-            
-        Returns:
-            Cost incurred (negative revenue for accepted customers)
+            context: Trajectory context containing cumulative_cost (updated in place)
+            action: Action to apply to the state
         """
         # NOTE: this function (and any functions that it calls) must be valid DynaML code.
 
@@ -143,48 +159,66 @@ class AirplaneMDP:
         assert state.remaining_days > 0 
         state.remaining_days -= 1
 
-        # After processing action, we await the next event - customer arrival. 
+       
+        if action == 0:
+            # Reject customer
+            # No cost, so cumulative_cost remains unchanged
+            state.price_offered_per_seat = 0
+        
+        elif action == 1:
+            assert state.remaining_seats > 0, "Cannot accept customer: no seats available"
+            # Accept customer ; sell the seat:
+            state.remaining_seats -= 1            
+            # Use a cost-based formulation (cost = -reward),    
+            # hence we should update cumulative cost as follows:
+            context.cumulative_cost -= state.price_offered_per_seat
+            # Reset the price offered per seat to 0, awaiting the next event. 
+            state.price_offered_per_seat = 0
+        
+        else:
+            assert False, f"Invalid action: Must be 0 (reject) or 1 (accept)"
+
+         # After processing action, we await the next event - customer arrival. 
         if state.remaining_days == 0:
             state.category = StateCategory.FINAL
         else:
             state.category = StateCategory.AWAIT_EVENT
-
-        if action == 0:
-            # Reject customer
-            state.price_offered_per_seat = 0
-            return 0.0
-        
-        elif action == 1:
-            # Accept customer
-            # Sell the seat to the customer. 
-            state.remaining_seats -= 1            
-            # Use a cost-based formulation (cost = -reward)
-            cost = -state.price_offered_per_seat
-            # Reset the price offered per seat to 0, awaiting the next event. 
-            state.price_offered_per_seat = 0
-            return cost
-        
-        else:
-            assert False, f"Invalid action: Must be 0 (reject) or 1 (accept)"
     
-    def is_allowed_action(self, state: State, action: int) -> bool:
+    
+    def write_features(self, state: State, features: Features) -> None:
         """
-        Check if an action is allowed in the current state.
-
-        Returns:
-            True if action is allowed
+        Write feature vector representation of the state.
+        
+        Args:
+            state: Current state to extract features from
+            features: Features sink to write features to
         """
-        # NOTE: function is_allowed_action must be valid DynaML code.   
+        # NOTE: function write_features must be valid DynaML code.
+        features.append(state.remaining_days / self.initial_days)
+        features.append(state.remaining_seats / self.initial_seats)
+        features.append(state.price_offered_per_seat / self.average_price)
+        # NOTE: features also supports append_many and extend, e.g.:
+        # features.append_many(state.remaining_days, state.remaining_seats)
+    
+    def write_action_validity(self, state: State, valid: NDArray[np.bool_]) -> None:
+        """
+        Write action validity: valid[i] = True  if action i is allowed in the current state
+                               valid[i] = False otherwise. 
+        
+        Args:
+            state: Current state
+            valid: Boolean array of length num_actions to write the validity mask to
+        """
+        # NOTE: function write_action_validity must be valid DynaML code.
+        valid[0] = True                       # Reject is always allowed. 
+        valid[1] = state.remaining_seats > 0  # Can accept only if seats available 
 
-        if action == 0:
-            return True
-        elif action == 1:
-            return state.remaining_seats > 0
-        else:
-            assert False, f"Invalid action: Must be 0 (reject) or 1 (accept)"
 
+# ============================================================================
+# Policy Definition
+# ============================================================================
 
-@dataclass
+@dataclass(slots=True)
 class SimplePolicy:
     """
     Simple rule-based policy for the airplane MDP. This policy adheres to the DynaPlex DSL. 
@@ -214,85 +248,58 @@ class SimplePolicy:
             return 0
         
         # Rule 1: More than seat_threshold seats left
-        if state.remaining_seats > self.seat_threshold:
+        elif state.remaining_seats > self.seat_threshold:
             return 1
         
         # Rule 2: 1-seat_threshold seats and <= days_threshold remaining
-        if state.remaining_days <= self.days_threshold and state.price_offered_per_seat >= self.min_price_low_days:
+        elif state.remaining_days <= self.days_threshold and state.price_offered_per_seat >= self.min_price_low_days:
             return 1
         
         # Rule 3: 1-seat_threshold seats and > days_threshold remaining
-        if state.remaining_days > self.days_threshold and state.price_offered_per_seat >= self.min_price_high_days:
+        elif state.remaining_days > self.days_threshold and state.price_offered_per_seat >= self.min_price_high_days:
             return 1
-        
-        return 0
+        else:
+            return 0
 
 
-def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42, verbose: bool = True) -> float:
+# ============================================================================
+# Validation: Manual Simulation
+# ============================================================================
+
+def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) -> None:
     """
-    Simulate a single episode using the given policy.
-
-    This loop illustrates the interaction between the MDP, state, and policy. It is not needed for the API.
+    Simulate a single episode to validate MDP implementation.
     
-    The simulation loop continues until state.category == FINAL.
-    On each iteration, it dispatches based on the state category:
-    - AWAIT_EVENT: call modify_state_with_event
-    - AWAIT_ACTION: call modify_state_with_action
+    Useful for debugging and validating your MDP before training.
+    """     
+    context = TrajectoryContext(rng=np.random.default_rng(seed))
+    state = mdp.get_initial_state(context)
     
-    Args:
-        mdp: MDP instance
-        policy: Policy instance to use for action selection
-        seed: Random seed (keyword-only)
-        verbose: Whether to print detailed output during simulation (keyword-only)
-        
-    Returns:
-        Total cost (negative revenue) for the episode
-    """
-    # NOTE: this function is just a cpython function used to simulate the MDP.
-    # It is not needed for the API. 
-
-    rng = np.random.default_rng(seed)
-    state = mdp.get_initial_state(rng)
-    
-    total_cost = 0.0
     step = 0
-    
-    if verbose:
-        print(f"Initial state: {state}")
-        print("-" * 80)
+    print("=" * 80)
+    print("DETAILED SIMULATION (Single Episode for MDP & policy validation)")
+    print(f"Initial state: {state}")
+    print("-" * 80)
     
     while state.category != StateCategory.FINAL:
         if state.category == StateCategory.AWAIT_EVENT:
-            # Generate customer arrival event
-            cost = mdp.modify_state_with_event(state, rng)
-            total_cost += cost
-            if verbose:
-                print(f"  State after event: {state}")
+            mdp.modify_state_with_event(state, context)
+            print(f"  State after event: {state}")
             
         elif state.category == StateCategory.AWAIT_ACTION:
-            # Apply policy and execute action
+            # Apply policy and set action on context
             action = policy.get_action(state)
-            
-            if verbose:
-                action_name = "ACCEPT" if action == 1 else "REJECT"
-                print(f"Step {step}: ACTION {action_name} ({action})")
-            
-            cost = mdp.modify_state_with_action(state, action)
-            total_cost += cost
-            
-            if verbose:
-                print(f"  State after action: {state}")
+            mdp.modify_state_with_action(state, context, action)
+            print(f"Step {step}: ACTION {action} -> State after action: {state}")
             step += 1
         
         else:
             raise RuntimeError(f"Unexpected state category: {state.category}")
     
-    if verbose:
-        print("-" * 80)
-        print(f"Episode finished: {step} steps, total revenue: €{-total_cost:.0f}")
+    print("-" * 80)
+    print(f"Episode finished: {step} steps, total revenue: €{-context.cumulative_cost:.0f}")
     
-    return total_cost
-
+  
 
 def main() -> None:
     """Run airplane MDP simulation example."""
@@ -305,40 +312,95 @@ def main() -> None:
     )
     
     # Create policy with default parameters
-    policy = SimplePolicy(mdp=mdp)
+    policy = SimplePolicy(mdp=mdp)	
 
+
+    # no-op functionthat makes pyright verify that MDP satisfies the MDPProtocol interface.
+    assert_mdp(mdp)
+    assert_policy_for_mdp(mdp, policy)
     # Run single simulation with detailed output
-    print("=" * 80)
-    print("DETAILED SIMULATION (Single Episode)")
-    print("=" * 80)
-    simulate_episode(mdp, policy, seed=42, verbose=True)
+    simulate_episode(mdp, policy, seed=42)
     
-    # Run 1000 simulations to estimate average performance
+    
+    
+    num_simulations = 10000
     print("\n" + "=" * 80)
-    print("PERFORMANCE EVALUATION (1000 Episodes)")
+    print(f"PERFORMANCE EVALUATION ({num_simulations} Episodes)")
     print("=" * 80)
     
-    num_simulations = 1000
-    total_costs = []
-    
-    for i in range(num_simulations):
-        cost = simulate_episode(mdp, policy, seed=i, verbose=False)
-        total_costs.append(cost)
+    total_costs = simulate_episodes(mdp, policy, num_simulations, seed=0)
     
     # Calculate statistics (remember: cost = -revenue, so profit = -cost)
     average_cost = np.mean(total_costs)
     average_profit = -average_cost
     # standard error of the mean
     std_error = np.std(total_costs) / np.sqrt(num_simulations)
-    min_profit = -np.max(total_costs)
-    max_profit = -np.min(total_costs)
     
     print(f"Number of simulations: {num_simulations}")
     print(f"Average profit: €{average_profit:.2f}")
     print(f"Standard error of the mean: €{std_error:.2f}")
-    print(f"Min profit: €{min_profit:.2f}")
-    print(f"Max profit: €{max_profit:.2f}")
+    print(f"Min profit: €{-np.max(total_costs):.2f}")
+    print(f"Max profit: €{-np.min(total_costs):.2f}")
     print("=" * 80)
+
+
+# ============================================================================
+# PPO Training Example
+# ============================================================================
+
+def train_ppo_airplane() -> None:
+    """Train a PPO policy for the airplane MDP."""
+    # Create MDP
+    initial_days = 25
+    mdp = AirplaneMDP(
+        initial_days=initial_days,
+        initial_seats=10,
+        prices_per_customer_type=[3000, 2000, 1000],
+        customer_type_probs=[0.4, 0.3, 0.3],
+    )
+    
+    # Create baseline policy for comparison
+    policy = SimplePolicy(mdp=mdp)
+    
+    # Configure PPO trainer
+    config = PPOTrainerConfig(
+        seed=42,
+        device="cpu",
+        hidden_sizes=(128, 128),
+        num_envs=100,
+        total_timesteps=100000,
+        num_steps=2 * initial_days,
+        minibatch_size=64,
+        lr=2.5e-4,
+        logdir=None,  # Defaults to log/<MDP_class_name>/ppo
+    )
+    
+    # Train policy
+    ppo_trainer = PPOTrainer(mdp=mdp, config=config)
+    load_policy = False
+    if load_policy:
+        print("Loading previously trained policy...")
+        trained_policy = ppo_trainer.load_trained_policy()
+        print("Policy loaded successfully!")
+    else:
+        print("Training policy...")
+        trained_policy = ppo_trainer.train()
+        print("Training completed!")
+    
+    # Compare with baseline
+    print("=" * 80)
+    print("POLICY COMPARISON (Note: PPO does not easily beat the simple policy)")
+    print("=" * 80)
+    num_episodes = 1000
+    trained_costs = simulate_episodes(mdp, trained_policy, num_episodes, seed=0)
+    simple_costs = simulate_episodes(mdp, policy, num_episodes, seed=0)
+    print(f"Trained policy: {np.mean(trained_costs):.2f}")
+    print(f"Simple policy: {np.mean(simple_costs):.2f}")
+    print("=" * 80)
+
+
 
 if __name__ == "__main__":
     main()
+    # once a model is validated, you could consider training a policy:
+    # train_ppo_airplane()
