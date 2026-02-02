@@ -1,7 +1,7 @@
 ﻿.. _label_airplane:
 
-Airplane MDP formulation
-========================
+Airplane Ticket Selling MDP formulation
+=======================================
 
 A deliberately simple example: A company sells tickets to a flight. The flight can carry at most 10 passengers, and there are three types of customers:
 
@@ -22,10 +22,10 @@ The Components of the MDP
 
 3. **Transitions:** We consider 3 types of states to which we can transition: a state before an action and after an event (new customer arrival) happend (pre-action), the state after the action (post-action), and the final state, when no more seats can be sold.
 
-4. **Rewards (R):** The rewards of selling a seat against the different prices.
+4. **Costs (C):** The rewards of selling a seat against the different prices.
 
 .. note::
-	DynaPlex is costs based, so for this MDP we consider negative rewards.
+	DynaPlex is costs based, so for this MDP we will denote negative costs, which are equivalent to positive rewards.
 
 
 Policy

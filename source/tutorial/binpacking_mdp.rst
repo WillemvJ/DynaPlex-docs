@@ -3,7 +3,7 @@
 Bin Packing MDP formulation
 ===========================
 
-An infinite horizon example: An online bin packing problem where weights arrive sequentially and must be assigned to one of several bins. Each bin has a maximum capacity (``max_bin_size``). When a bin's total weight exceeds this capacity, the overflow weight incurs a cost, and the bin is emptied. The goal is to minimize the total overflow cost over an infinite horizon.
+The bin packing problem is an example of an infinite horizon MDP. Weights arrive sequentially and must be assigned to one of several bins. Each bin has a maximum capacity (``max_bin_size``). When a bin's total weight exceeds this capacity, the overflow weight incurs a cost, and the bin is emptied. The goal is to minimize the total overflow cost over an infinite horizon.
 
 In this problem, weights are revealed one by one according to a probability distribution. Each weight must be immediately assigned to one of the available bins. When a bin exceeds its maximum capacity, any overflow weight incurs a cost proportional to the overflow amount, and the bin is reset to empty. The process continues indefinitely.
 
@@ -27,7 +27,7 @@ The Components of the MDP
    - When a new weight arrives (event), it is sampled from the weight distribution and stored in ``upcoming_weight``. The state transitions to ``AWAIT_ACTION``, and ``context.time_elapsed`` is incremented.
    - When an action is taken, the weight is added to the selected bin. If the bin overflows, the overflow cost is added to ``context.cumulative_cost``, and the bin is reset to empty. The state transitions back to ``AWAIT_EVENT``.
 
-4. **Rewards (R):** The cost is the overflow amount when a bin exceeds its capacity. DynaPlex is cost-based, so we minimize cumulative cost.
+4. **Costs (C):** The cost is the overflow amount when a bin exceeds its capacity.
 
 .. note::
 
@@ -36,17 +36,12 @@ The Components of the MDP
    Unlike finite horizon MDPs where time is naturally bounded, infinite horizon MDPs require explicit time tracking. In DynaPlex, you must manually increment ``context.time_elapsed`` to track the progression of time. This is essential for:
    
    - Algorithms that need to know how many steps have elapsed
-   - Discounting future rewards (if using discounted objectives)
    - Stopping criteria for training or evaluation
    
    In this bin packing problem, time advances by one unit each time a new weight arrives, which happens in the ``modify_state_with_event`` function: ``context.time_elapsed += 1``.
 
 Policy
 ------
-
-A closely related concept to MDPs are policies. A policy is a function that maps a state to an action.
-
-**Policy (π):** Apart from the RL-algorithms available through DynaPlex, you can supply your own policy, which you could use as benchmark.
 
 This MDP example includes two simple heuristic policies:
 

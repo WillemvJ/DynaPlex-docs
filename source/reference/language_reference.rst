@@ -3,7 +3,7 @@ Dynamic System Modelling Language Reference
 
 To formulate a Markov decision problem, a formalization of the state and transition functions is required. In DynaPlex, *states* of a sequential problem are expressed as objects of a user-defined class, while *transitions* between states are formalized as modifications of those objects by transition functions. DynaPlex imposes a certain formalism for expressing these states and transition functions, that is referred to as Dynamic System Modeling Language (DymaML).
 
-DynaML is designed to achieve two core requirements: 1) being an expressive and readable language that is easy to learn, write, and read; 2) enabling automatic, efficient analysis and execution of the models it describes. To achieve these design goals, classes (states, MDPs) in DynaML are expressed as python dataclasses, whereas transition functions are represented as python methods on an MDP class that operate on objects of another dataclass.
+DynaML is designed to achieve two core requirements: 1) being an expressive and readable language that is easy to learn, write, and read; 2) enabling automatic, efficient analysis and execution of the models it describes. To achieve these design goals, classes (states, MDPs) in DynaML are expressed as python dataclasses, whereas transition functions are represented as python methods on an MDP class that operate on objects of another dataclass: a State class.
 
 Classes and functions expressed in DynaML are also valid python code, i.e. DynaML is a subset of python, making it easy to learn. However, python is also a very expressive language, which gives a lot of freedom in expressing this. To make it easy for algorithms to *reason* about problems and implement efficient solutions, DynaML imposes certain structural and semantic properties, that are described in this document.
 
@@ -18,7 +18,7 @@ Primitives
 DynaML programs manipulate a small collection of well-defined data primitives. Primitive values are scalars (``bool``, ``int``, ``float``) and finite lists of such scalars. These primitives can appear as arguments to transition functions, as local variables in expressions, and as fields of state objects.
 
 Classes and objects
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 On top of these primitives, DynaML uses Python dataclasses to define structured objects. State and MDP classes in DynaML are classes whose fields are either primitive values or other DynaML objects (nested classes), or lists of such objects. During execution, states are concrete instances of these dataclasses, and transition functions are methods that read and update their fields.
 

@@ -21,10 +21,8 @@ A key related concept is that of a policy, which specifies the action to take in
 
 4. **Policy (π):** A strategy that specifies which action to take in each state.
 
-DynaPlex builds on the MDP-EI (MDP with exogenous inputs) framework, which is illustrated below. Here, :math:`s_t` represents the state at time :math:`t`, :math:`\pi` represent the policy, :math:`a_t` the decision, and :math:`c_t` the costs, the exogenous event is denoted by :math:`\xi_t` and the transition function is :math:`f`.
+DynaPlex builds on the MDP-EI (MDP with exogenous inputs) framework, which is illustrated below. Here, :math:`s_t` represents the state at time :math:`t`, :math:`\pi` represent the policy, :math:`a_t` the decision, and :math:`c_t` the costs. We further denote a random event by :math:`\xi_t` and the transition function is :math:`f`.
 For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.15122>`_, `A unified framework for stochastic optimization <https://doi.org/10.1016/j.ejor.2018.07.014>`_. See also the published version of the Deep Controlled Learning paper: `published version <https://www.sciencedirect.com/science/article/pii/S0377221725000463>`_.
-
-
 
 .. figure:: ../assets/images/mdpei.png
    :alt: MDP-EI illustration
@@ -38,6 +36,13 @@ Explore the rest of our documentation to learn how to get started, create your o
 
 .. note::
    For detailed guides and examples, please refer to the specific sections of this documentation site.
+
+MDP models in DynaPlex
+----------------------
+
+DynaPlex models are defined as an MDP dataclass. This dataclass has specific methods which are required, and which manipulate objects of another user-defined class that represents the state of the problem. Examples are the Airplane Ticket Selling MDP and the Bin Packing MDP: :doc:`Airplane Ticket Selling MDP <../tutorial/airplane_mdp>` and :doc:`Bin Packing MDP <../tutorial/binpacking_mdp>`. The Python code for these MDPs is available in the :doc:`Airplane MDP Python Code <../tutorial/airplane_mdp_python_code>` and :doc:`Bin Packing MDP Python Code <../tutorial/binpacking_mdp_python_code>` pages.
+
+Classes and methods in DynaPlex MDPs must adhere to certain structural and semantic properties. For more information, see the :doc:`Language Reference <../reference/language_reference>`.
 
 Recommended Reference Books
 ---------------------------

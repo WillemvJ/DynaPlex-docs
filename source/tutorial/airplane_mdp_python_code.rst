@@ -1,7 +1,7 @@
 ﻿.. _label_airplane_python:
 
-Airplane MDP Python Code
-========================
+Airplane Ticket Selling MDP Python Code
+=======================================
 
 You can download a complete Python implementation of this MDP example: :download:`airplane_mdp_example.py <../downloads/airplane_mdp_example.py>`
 

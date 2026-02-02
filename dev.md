@@ -35,7 +35,7 @@ or, to view it served:
 
 ```bash
 cd build/html
-python -m http.server 8000
+py -m http.server 8000
 ```
 
 Then open http://localhost:8000 in your browser
