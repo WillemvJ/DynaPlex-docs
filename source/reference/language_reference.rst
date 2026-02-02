@@ -15,7 +15,7 @@ Classes and functions expressed in DynaML are also valid python code, i.e. DynaM
 How to use this document
 ------------------------
 
-This document describes what can and cannot be accepted in DynaPlex MDP methods. Summary:
+This document describes what can and cannot be accepted in DynaPlex MDP methods. Summary; write code in Python, but use the following rules:
 
 - Annotate parameters and return types.
 - Use DataClasses; avoid dictionaries, tuples. 
