@@ -31,7 +31,8 @@ Or install with all optional dependencies:
 
    pip install dynaplex[complete]
 
-.note:: Even with a complete install, separate installation of PyTorch is still required for the RL algorithms.
+.. note::
+   Even with a complete install, separate installation of PyTorch is still required for the RL algorithms.
 
 Next Steps
 ----------
