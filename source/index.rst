@@ -26,6 +26,14 @@ Contents
 
    tutorial/airplane_mdp
    tutorial/airplane_mdp_python_code
+   tutorial/binpacking_mdp
+   tutorial/binpacking_mdp_python_code
+
+.. toctree::
+   :maxdepth: 0
+   :caption: Reference
+
+   reference/language_reference
 
 .. toctree::
    :maxdepth: 0
