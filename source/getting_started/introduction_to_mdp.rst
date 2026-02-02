@@ -15,11 +15,15 @@ Key Components of an MDP
 
 2. **Actions (A):** The set of all possible moves or decisions that the agent can make in a given state.
 
-3. **Costs (C):** The numerical values associated with state-action pairs, indicating the immediate cost of taking a particular action in a specific state. Note that a reward is a negative cost. 
+3. **Randomness/ Events** In certain situations, the next state and reward do not depend deterministically on the state and the action, but are stochastic. In DynaPlex, the random events or stochastic transitions are represented by random variables that are explicitly sampled from some distribution. 
+
+4. **Transitions:** Transition function specify how the state changes in response to actions and randomness/events. 
+
+5. **Costs:** The numerical values associated with state-action pairs, indicating the immediate cost of taking a particular action in a specific state. Note that a reward is a negative cost. 
 
 A key related concept is that of a policy, which specifies the action to take in each state:
 
-4. **Policy (π):** A strategy that specifies which action to take in each state.
+1. **Policy (π):** A strategy that specifies which action to take in each state.
 
 DynaPlex builds on the MDP-EI (MDP with exogenous inputs) framework, which is illustrated below. Here, :math:`s_t` represents the state at time :math:`t`, :math:`\pi` represent the policy, :math:`a_t` the decision, and :math:`c_t` the costs. We further denote a random event by :math:`\xi_t` and the transition function is :math:`f`.
 For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.15122>`_, `A unified framework for stochastic optimization <https://doi.org/10.1016/j.ejor.2018.07.014>`_. See also the published version of the Deep Controlled Learning paper: `published version <https://www.sciencedirect.com/science/article/pii/S0377221725000463>`_.
@@ -27,20 +31,12 @@ For more information, we refer to: `ArXiv paper <https://arxiv.org/abs/2011.1512
 .. figure:: ../assets/images/mdpei.png
    :alt: MDP-EI illustration
 
-Why MDPs are Important
------------------------
-
-MDPs provide a formal and systematic way to model and solve decision-making problems. They are used in various applications, including robotics, game playing, autonomous systems, and optimization tasks. By understanding and implementing MDPs, you can design intelligent agents capable of making optimal decisions in complex, uncertain environments.
-
-Explore the rest of our documentation to learn how to get started, create your own MDPs, and leverage the full capabilities of our software tool. Happy coding!
-
-.. note::
-   For detailed guides and examples, please refer to the specific sections of this documentation site.
-
 MDP models in DynaPlex
 ----------------------
 
-DynaPlex models are defined as an MDP dataclass. This dataclass has specific methods which are required, and which manipulate objects of another user-defined class that represents the state of the problem. Examples are the Airplane Ticket Selling MDP and the Bin Packing MDP: :doc:`Airplane Ticket Selling MDP <../tutorial/airplane_mdp>` and :doc:`Bin Packing MDP <../tutorial/binpacking_mdp>`. The Python code for these MDPs is available in the :doc:`Airplane MDP Python Code <../tutorial/airplane_mdp_python_code>` and :doc:`Bin Packing MDP Python Code <../tutorial/binpacking_mdp_python_code>` pages.
+DynaPlex models are defined as an MDP dataclass. This dataclass has specific methods which are required, and which manipulate objects of another user-defined class that represents the state of the problem. The formalization makes an explicit distinction between States that are awaiting an action (pre-action state) and States that are awaiting an event (post-action state); cf. "Reinforcement Learning and Stochastic Optimization" by Warren B. Powell, Section 3.3.
+
+We provide examples/tutorials in the form of the Airplane Ticket Selling MDP and the Bin Packing MDP: :doc:`Airplane Ticket Selling MDP <../tutorial/airplane_mdp>` and :doc:`Bin Packing MDP <../tutorial/binpacking_mdp>`. The Python code for these MDPs is available in the :doc:`Airplane MDP Python Code <../tutorial/airplane_mdp_python_code>` and :doc:`Bin Packing MDP Python Code <../tutorial/binpacking_mdp_python_code>` pages.
 
 Classes and methods in DynaPlex MDPs must adhere to certain structural and semantic properties. For more information, see the :doc:`Language Reference <../reference/language_reference>`.
 

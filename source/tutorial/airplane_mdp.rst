@@ -17,12 +17,19 @@ The Components of the MDP
 -------------------------
 
 1. **States (S):** The state has only 3 variables: (i) the remaining days until the flight leaves, (ii) the number of remaining seats that can still be offered to customers, and (iii) the price that the new customer is willing to pay (1000,2000 or 3000).
+   - We consider 3 types of states to which we can transition: (i) a state after an event (new customer arrival) happened, right before the decision to accept or reject that customer (AWAIT_ACTION), (ii) a state right after a customer is accepted or rejected, before the next customer arrives (AWAIT_EVENT), and (iii) the final state, when no more seats can be sold (FINAL).
 
-2. **Actions (A):** The action is simple: sell the seat to the customer or reject the customer. The action space is constrained, since the carrier canot sell more than 10 seats.
+2. **Actions (A):** The action is simple: sell the seat to the customer or reject the customer. 
 
-3. **Transitions:** We consider 3 types of states to which we can transition: a state before an action and after an event (new customer arrival) happend (pre-action), the state after the action (post-action), and the final state, when no more seats can be sold.
+3. **Randomness/ Events:** On each day, exactly one customer arrives, the type of which is random.
 
-4. **Costs (C):** The rewards of selling a seat against the different prices.
+4. **Transitions:**
+   - When we are in the ``AWAIT_EVENT`` state and a new customer arrives, the state transitions to ``AWAIT_ACTION``
+   - When we are in the ``AWAIT_ACTION`` state and a customer is accepted or rejected, the state transitions to ``AWAIT_EVENT``
+   - No more changes after the state becomes ``FINAL``.
+
+5. **Costs (C):** The rewards of selling a seat against the different prices.
+
 
 .. note::
 	DynaPlex is costs based, so for this MDP we will denote negative costs, which are equivalent to positive rewards.

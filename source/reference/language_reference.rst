@@ -1,11 +1,31 @@
 Dynamic System Modelling Language Reference
 ============================================
 
-To formulate a Markov decision problem, a formalization of the state and transition functions is required. In DynaPlex, *states* of a sequential problem are expressed as objects of a user-defined class, while *transitions* between states are formalized as modifications of those objects by transition functions. DynaPlex imposes a certain formalism for expressing these states and transition functions, that is referred to as Dynamic System Modeling Language (DymaML).
+To formulate a Markov decision problem, a formalization of the state and transition functions is required. In DynaPlex, *states* of a sequential problem are expressed as objects of a user-defined class, while *transitions* between states are formalized as modifications of those objects by transition functions. DynaPlex imposes a certain formalism for expressing these states and transition functions, that is referred to as Dynamic System Modeling Language (DynaML).
 
-DynaML is designed to achieve two core requirements: 1) being an expressive and readable language that is easy to learn, write, and read; 2) enabling automatic, efficient analysis and execution of the models it describes. To achieve these design goals, classes (states, MDPs) in DynaML are expressed as python dataclasses, whereas transition functions are represented as python methods on an MDP class that operate on objects of another dataclass: a State class.
+DynaML is designed to achieve two core requirements: 
+
+1. being an expressive and readable language that is easy to learn, write, and read; 
+2. enabling automatic, efficient analysis and execution of the models it describes. 
+
+To achieve these design goals, classes (states, MDPs) in DynaML are expressed as python dataclasses, whereas transition functions are represented as python methods on an MDP class that operate on objects of another dataclass: a State class.
 
 Classes and functions expressed in DynaML are also valid python code, i.e. DynaML is a subset of python, making it easy to learn. However, python is also a very expressive language, which gives a lot of freedom in expressing this. To make it easy for algorithms to *reason* about problems and implement efficient solutions, DynaML imposes certain structural and semantic properties, that are described in this document.
+
+How to use this document
+------------------------
+
+This document describes what can and cannot be accepted in DynaPlex MDP methods. Summary:
+
+- Annotate parameters and return types.
+- Use DataClasses; avoid dictionaries, tuples. 
+- Use homogeneous lists; avoid heterogeneous lists.
+- Use functions; avoid lambdas.
+- Use pure python; no packages apart from limited numpy support. 
+- avoid strings; use enums instead. 
+- When you need to load data using external files and packages, do so in the `__init__` method of the MDP class, not in the transition functions, and load the results into supported fields of the state class. 
+
+Test your code in CPython. Validate in pyright - if that complains, then it is likely that the code is not valid DynaML. If something fails to compile, use an LLM, pointing it to this reference document and to your code, and it will likely tell you what is wrong. If not, post a question on `GitHub <https://github.com/WillemvJ/DynaPlex-docs/issues>`_.
 
 DynaML Data types
 -----------------
@@ -15,7 +35,7 @@ DynaML supports data primitives and objects of user-defined classes. In DynaML, 
 Primitives
 ~~~~~~~~~~
 
-DynaML programs manipulate a small collection of well-defined data primitives. Primitive values are scalars (``bool``, ``int``, ``float``) and finite lists of such scalars. These primitives can appear as arguments to transition functions, as local variables in expressions, and as fields of state objects.
+DynaML programs manipulate a small collection of well-defined data primitives. Primitive values are scalars (``bool``, ``int``, ``float``) and lists of such scalars. These primitives can appear as parameters to functions, as local variables in expressions, and as fields of state objects.
 
 Classes and objects
 ~~~~~~~~~~~~~~~~~~~
@@ -52,7 +72,7 @@ DynaML supports Python enums for representing finite sets of named integer value
 
 .. code-block:: python
 
-   from enum import Enum, Auto
+   from enum import Enum, auto
 
    class Light(Enum):
        RED = auto()
@@ -65,7 +85,7 @@ Enums can be used as function parameters, return types, and as fields in datacla
 
    Enums and dataclasses must be defined or imported at module level (not inside functions). When DynaPlex analyzes a function's type annotations, it resolves types from the function's module globals using ``get_type_hints()``. Types defined or imported only within a function's local scope can not always be resolved and are unsupported.
 
-Functions and Method signatures
+Functions and Methods signatures
 --------------------------------
 
 DynaML supports both free functions and methods. Here, we discuss the allowed syntax and semantics for free functions.
@@ -97,7 +117,7 @@ Methods can be added to dataclasses. The following rules apply:
 - All other parameters must have type hints
 - Return type annotations work the same as for free functions
 - Methods are called using dot notation: ``obj.method(args)``
-- Special methods (e.g., ``__init__``, ``__post_init__``, ``__eq__``, ``__lt__``, etc.) are not supported; must make use of default initialization and eq machinery of dataclasses. That is, ``__init__`` and ``__post_init__`` are unsupported inasfar as the object is constructed in any functions that are parsed as DynaML. (Since MDP is passed as an argument, the ``__init__`` of the MDP is supported, and there, any valid cpython classes and libraries can be used.)
+- Special methods (e.g., ``__init__``, ``__post_init__``, ``__eq__``, ``__lt__``, etc.) are not supported; must make use of default initialization and eq machinery of dataclasses. That is, ``__init__`` and ``__post_init__`` are unsupported insofar as the object is constructed in any functions that are parsed as DynaML. (Since MDP is passed as an argument, the ``__init__`` of the MDP is supported, and there, any valid cpython classes and libraries can be used.)
 
 **Example of a dataclass with a method:**
 
@@ -124,7 +144,7 @@ Parameters work as in normal python. A minor restriction is that you cannot assi
 .. code-block:: python
 
    def give_age(node: Node, age: int) -> None:
-       node.on_hold = true       # accepted
+       node.on_hold = True       # accepted
        node.children[0] =  node  # accepted
        age = 42           # ERROR: assignment to parameter 'age' is not permitted
 
@@ -142,7 +162,7 @@ The supported binary operators are ``+``, ``-``, ``*``, ``/``, ``//``, ``%``, an
 
 .. code-block:: python
 
-   def arithmetic_examples(inv: int, sold: int, price: float, factor: float, flag : bool) -> None:
+   def arithmetic_examples(inv: int, sold: int, price: float, factor: float, flag: bool) -> None:
        inv -= sold                  # valid: int -= int
        discounted = price * factor  # valid: float * float -> float
        discounted /= 100.0          # valid: float /= float -> float
@@ -269,7 +289,7 @@ At present, list of list types (``list[list[int]]``) are not supported; this wil
 NumPy arrays
 ~~~~~~~~~~~~
 
-There is support for simple NumPy ``NDArray``, but only for numpy arrays and operations that enable the determination of the dimension of types by looking at the code. Also, the data type must always be annotated, and one of ``np.bool_``, ``np.float64``, ``np.int64``, e.g.:
+There is support for simple NumPy ``NDArray``, but only for NumPy arrays and operations that enable the determination of the dimension of types by looking at the code. Also, the data type must always be annotated, and one of ``np.bool_``, ``np.float64``, ``np.int64``, e.g.:
 
 .. code-block:: python
 
@@ -279,7 +299,7 @@ There is support for simple NumPy ``NDArray``, but only for numpy arrays and ope
        upcoming_weight: int              
        category: StateCategory = StateCategory.AWAIT_EVENT
 
-Precisely which numpy operations will be supported is being determined, but the most common operations will likely be included, including multi-dimensional arrays.
+Precisely which NumPy operations will be supported is being determined, but the most common operations will likely be included, including multi-dimensional arrays.
 
 For a complete example using NumPy arrays in an infinite horizon MDP, see the :doc:`binpacking MDP tutorial <../tutorial/binpacking_mdp>`.
 

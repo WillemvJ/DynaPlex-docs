@@ -21,13 +21,13 @@ The Components of the MDP
    - ``upcoming_weight``: The weight that has just arrived and must be assigned
    - ``category``: The state category (``AWAIT_EVENT`` or ``AWAIT_ACTION``)
 
-2. **Actions (A):** The action is to select which bin (0 to ``number_of_bins-1``) to assign the upcoming weight to. All bins are always valid actions.
+2. **Actions (A):** The action is to select which bin (0 to ``number_of_bins-1``) to assign the upcoming weight to. All bins are always valid actions. (This is unlike in the :doc:`Airplane Ticket Selling MDP <airplane_mdp>`, where the action space was constrained.).
 
-3. **Transitions:** 
+3. **Randomness/ Events:** A new item arrives that will need to be added to a bit. The weight of the item is sampled from a distribution.
+4. **Transitions:** 
    - When a new weight arrives (event), it is sampled from the weight distribution and stored in ``upcoming_weight``. The state transitions to ``AWAIT_ACTION``, and ``context.time_elapsed`` is incremented.
    - When an action is taken, the weight is added to the selected bin. If the bin overflows, the overflow cost is added to ``context.cumulative_cost``, and the bin is reset to empty. The state transitions back to ``AWAIT_EVENT``.
-
-4. **Costs (C):** The cost is the overflow amount when a bin exceeds its capacity.
+5. **Costs (C):** The cost is the overflow amount when a bin exceeds its capacity.
 
 .. note::
 

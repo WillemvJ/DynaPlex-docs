@@ -18,6 +18,7 @@ Contents
    :maxdepth: 0
    :caption: Getting started
 
+   getting_started/installation
    getting_started/introduction_to_mdp
 
 .. toctree::
