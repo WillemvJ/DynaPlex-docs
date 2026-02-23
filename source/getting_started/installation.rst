@@ -37,4 +37,4 @@ Or install with all optional dependencies:
 Next Steps
 ----------
 
-Once you have DynaPlex installed, you could start with the :doc:`introduction to MDPs <introduction_to_mdp>`, or dive right into the :doc:`tutorials <tutorial/airplane_mdp>`.
+Once you have DynaPlex installed, you could start with the :doc:`introduction to MDPs <introduction_to_mdp>`, or dive right into the :doc:`tutorials <tutorial/airplane_mdp>`. 
