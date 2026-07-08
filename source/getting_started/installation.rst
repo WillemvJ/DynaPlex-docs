@@ -4,12 +4,12 @@ Installation
 Requirements
 ------------
 
-- **Python 3.12 only**
+- **Python 3.13 only**
 - **Platform support:**
 
   - Windows: AMD64
-  - Linux: x86_64
-  - macOS: modern hardware (Apple Silicon) only; no legacy Intel hardware supported
+  - Linux: x86_64 (glibc 2.28 or newer, ``manylinux_2_28``)
+  - macOS: Apple Silicon (arm64), macOS 14.0 or newer; no Intel hardware supported
   
 - **PyTorch:** Algorithms require a compatible PyTorch installation. Use the `PyTorch selector <https://pytorch.org/get-started/locally/>`_ to install the appropriate version for your system.
 

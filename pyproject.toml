@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "dynaplex"
-version = "2.0"
+# No hardcoded version: this is only the docs build env (package-mode = false).
+# The documented version is derived from the published PyPI release in conf.py.
 description = "A software library for solving Markov Decision Problems and similar models."
 authors = [
     "Willem van Jaarsveld",

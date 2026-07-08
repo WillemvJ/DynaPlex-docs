@@ -19,6 +19,7 @@ Contents
    :caption: Getting started
 
    getting_started/installation
+   getting_started/verifying_installation
    getting_started/introduction_to_mdp
 
 .. toctree::

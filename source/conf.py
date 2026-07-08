@@ -1,10 +1,6 @@
 import datetime
-import os
-import shutil
-import sys
-import pprint
-
-import tomli
+import json
+import urllib.request
 
 # -- Project information
 # Note: If you need to import Python modules from the main DynaPlex project,
@@ -13,12 +9,31 @@ import tomli
 
 now = datetime.date.today()
 
+
+# -- Version: single public source of truth -------------------------------
+# The DynaPlex code lives in a private repo, so its git tags are not visible to
+# this (public) docs build. The one public thing both agree on is the PUBLISHED
+# PyPI release, so we key the docs version off that: every time a release is
+# published, the docs version tracks it automatically -- no manual bump, no
+# cross-repo secret. Uses the PyPI JSON API (not `pip install`) so it is
+# independent of this build's Python version and the wheel's ABI.
+def _pypi_version(package: str, fallback: str = "0.0.0+unknown") -> str:
+    try:
+        url = f"https://pypi.org/pypi/{package}/json"
+        with urllib.request.urlopen(url, timeout=10) as fh:
+            return json.load(fh)["info"]["version"]
+    except Exception:
+        return fallback
+
+
+release = _pypi_version("dynaplex")   # full package version, e.g. "1.10.0"
+version = release                     # shown in the version dropdown / theme
+
+# "DynaPlex 2" is the product-generation name (like "Python 3"); the release
+# version above is the actual PyPI package version and is what stays in sync.
 project = "DynaPlex 2"
 authors = "DynaPlex contributors"
 copyright = f"2023 - {now.year}, {authors}"
-
-with open("../pyproject.toml", "rb") as fh:
-    pyproj = tomli.load(fh)
 
 # -- API documentation
 autoclass_content = "class"
@@ -97,7 +112,7 @@ html_theme_options = {
     "version_info": [
         {
             "version": "",
-            "title": "v2.0",
+            "title": f"v{release}",
             "aliases": [],
         },
     ],
