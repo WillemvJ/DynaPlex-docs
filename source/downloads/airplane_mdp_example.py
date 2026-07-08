@@ -1,5 +1,5 @@
 """
-This demonstrates the definition of an MDP and a policy in DynaPlex 2.0:
+This demonstrates the definition of an MDP and a policy in DynaPlex:
 1. Defining an MDP in DynaML
 2. Defining a policy in DynaML
 3. Validating the MDP and policy

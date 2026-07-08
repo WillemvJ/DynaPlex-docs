@@ -1,10 +1,10 @@
-# DynaPlex 2 Docs
+# DynaPlex Docs
 
-DynaPlex 2 is a Python library for solving Markov Decision Problems and similar models (POMDP, HMM). MDP/POMDP Models in DynaPlex 2 are written in (a subset of) Python, and are interpreted using a custom fast interpreter that supports multi-threading and vectorization. DynaPlex 2 focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc.
+DynaPlex is a Python library for solving Markov Decision Problems and similar models (POMDP, HMM). MDP/POMDP Models in DynaPlex are written in (a subset of) Python, and are interpreted using a custom fast interpreter that supports multi-threading and vectorization. DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc.
 
 ## Requirements
 
-- Python 3.12 only
+- Python 3.13 only
 - Windows: AMD64
 - Linux: x86_64
 - macOS: modern hardware (Apple Silicon) only; no legacy intel hardware supported.

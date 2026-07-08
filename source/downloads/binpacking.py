@@ -1,5 +1,5 @@
 """
-Bin Packing MDP example in DynaML - the dynamic modelling language for DynaPlex 2.0.
+Bin Packing MDP example in DynaML - the dynamic modelling language for DynaPlex.
 Includes:
 - BinPackingMDP: The MDP class
 - LowestWeightPolicy: A simple heuristic policy that assigns the incoming weight to the bin with the lowest current weight

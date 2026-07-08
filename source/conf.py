@@ -26,12 +26,13 @@ def _pypi_version(package: str, fallback: str = "0.0.0+unknown") -> str:
         return fallback
 
 
-release = _pypi_version("dynaplex")   # full package version, e.g. "1.10.0"
+release = _pypi_version("dynaplex")   # full package version, e.g. "1.10.1"
 version = release                     # shown in the version dropdown / theme
 
-# "DynaPlex 2" is the product-generation name (like "Python 3"); the release
-# version above is the actual PyPI package version and is what stays in sync.
-project = "DynaPlex 2"
+# Product name is just "DynaPlex"; the release version above carries the
+# meaning (so the title reads e.g. "DynaPlex 1.10.1 documentation"). Once a 2.0
+# package is published, the version alone makes the generation clear.
+project = "DynaPlex"
 authors = "DynaPlex contributors"
 copyright = f"2023 - {now.year}, {authors}"
 
