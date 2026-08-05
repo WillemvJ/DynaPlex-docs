@@ -20,7 +20,6 @@ from dynaplex.modelling import (
     featurizer,
     GlobalStateWriter,
     HorizonType,
-    make_alias_sampler,
     StateCategory,
     TrajectoryContext,
     Validity,
@@ -91,7 +90,7 @@ class BinPackingMDP:
         self.max_bin_size = max_bin_size
         self.number_of_bins = number_of_bins
         self.weight_dist = weight_dist
-        self.weight_sampler = make_alias_sampler(weight_dist)
+        self.weight_sampler = weight_dist.alias_sampler()
         # Number of actions in the MDP that are potentially valid
         self.num_actions = number_of_bins
         # Horizon type for this MDP

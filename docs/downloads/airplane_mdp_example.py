@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from dynaplex import PPOTrainerConfig, PPOTrainer, default_rng
+from dynaplex import PolicyComparer, PPOTrainerConfig, PPOTrainer, default_rng
 from dynaplex.modelling import (
     Validity,
     HorizonType,
@@ -24,7 +24,6 @@ from dynaplex.modelling import (
     featurizer,
     GlobalStateWriter,
 )
-from dynaplex.utilities import simulate_episodes
 
 
 # ============================================================================
@@ -334,20 +333,18 @@ def main() -> None:
     print("\n" + "=" * 80)
     print(f"PERFORMANCE EVALUATION ({num_simulations} Episodes)")
     print("=" * 80)
-    
-    total_costs = simulate_episodes(mdp, policy, num_simulations, seed=0)
-    
-    # Calculate statistics (remember: cost = -revenue, so profit = -cost)
-    average_cost = np.mean(total_costs)
-    average_profit = -average_cost
-    # standard error of the mean
-    std_error = np.std(total_costs) / np.sqrt(num_simulations)
-    
+
+    # PolicyComparer runs the episodes on the compiled engine (falling back to
+    # plain Python automatically if a policy cannot be compiled).
+    comparer = PolicyComparer(mdp, number_of_trajectories=num_simulations, seed=0)
+    assessment = comparer.assess(policy)
+
+    # Costs are negative revenues, so profit = -cost.
     print(f"Number of simulations: {num_simulations}")
-    print(f"Average profit: €{average_profit:.2f}")
-    print(f"Standard error of the mean: €{std_error:.2f}")
-    print(f"Min profit: €{-np.max(total_costs):.2f}")
-    print(f"Max profit: €{-np.min(total_costs):.2f}")
+    print(f"Average profit: €{-assessment.mean:.2f}")
+    print(f"Standard error of the mean: €{assessment.error:.2f}")
+    print(f"Min profit: €{-np.max(assessment.returns):.2f}")
+    print(f"Max profit: €{-np.min(assessment.returns):.2f}")
     print("=" * 80)
 
 
@@ -398,11 +395,11 @@ def train_ppo_airplane() -> None:
     print("=" * 80)
     print("POLICY COMPARISON (Note: PPO does not easily beat the simple policy in this example)")
     print("=" * 80)
-    num_episodes = 1000
-    trained_costs = simulate_episodes(mdp, trained_policy, num_episodes, seed=0)
-    simple_costs = simulate_episodes(mdp, policy, num_episodes, seed=0)
-    print(f"Trained policy: {np.mean(trained_costs):.2f}")
-    print(f"Simple policy: {np.mean(simple_costs):.2f}")
+    # Both policies see the same random streams (common random numbers), so the
+    # delta columns are paired differences with tight standard errors.
+    comparer = PolicyComparer(mdp, number_of_trajectories=1000, seed=0)
+    results = comparer.compare({"simple rule": policy, "trained (PPO)": trained_policy})
+    print(results)
     print("=" * 80)
 
 

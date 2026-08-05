@@ -12,8 +12,8 @@ DynaML is designed to achieve two core requirements:
 
 1. being an expressive and readable language that is easy to learn, write,
    and read;
-2. enabling automatic, efficient analysis and execution of the models it
-   describes.
+2. enabling automatic analysis and **compilation** of the models it
+   describes, for efficient execution.
 
 To achieve these design goals, classes (states, MDPs) in DynaML are expressed
 as Python dataclasses, whereas transition functions are represented as Python
@@ -26,6 +26,24 @@ also a very expressive language, which gives a lot of freedom. To make it
 easy for algorithms to *reason* about problems and implement efficient
 solutions, DynaML imposes certain structural and semantic properties, which
 are described in this document.
+
+## How DynaML code runs
+
+DynaML models lead a double life. On the one hand they are ordinary Python:
+you can construct states and call transition methods directly in CPython —
+handy for debugging and unit-testing a model. On the other hand, when a
+model is handed to an algorithm (`dcl`, `PolicyComparer`, `PPOTrainer`, or
+an `Engine` directly), DynaPlex **compiles** it: classes and methods are
+translated into an efficient internal representation and executed on a
+multi-threaded engine with a bundled LLVM JIT. That compiled execution is
+where the performance comes from — and both routes produce identical
+results, bit for bit.
+
+Throughout this document, *compiled code* refers to methods running on the
+engine. The restrictions described here are what makes compilation possible,
+and they are enforced when a model is compiled; plain CPython will happily
+run code that violates them, which is precisely why validating with pyright
+(and reading this document) matters.
 
 ## How to use this document
 
@@ -602,6 +620,12 @@ def schedule(jobs: list[Job]) -> Job:
     return heapq.heappop(jobs)      # returns the smallest Job
 ```
 
+Note that `Job` in this example works only because it is an *orderable*
+object — a `@dataclass(order=True)` with a homogeneous numeric leading
+prefix, as defined in
+[Comparisons, equality and ordering](#comparisons-equality-and-ordering)
+(where this `Job` class is introduced).
+
 `heappop` on an empty heap raises, as in Python. The other `heapq` helpers
 (`heappushpop`, `heapreplace`, `nlargest`, `nsmallest`, `merge`) are not
 currently supported.
@@ -648,6 +672,14 @@ storage that you index explicitly.
 
 ### Random number generation
 
+!!! tip "Prefer `DiscreteDist` for event distributions"
+    Don't roll your own discrete distributions from raw generator draws. The
+    preferred route is a [`DiscreteDist`](#distributions-and-samplers) built
+    in the MDP's ``__init__`` plus a precomputed sampler
+    (``dist.alias_sampler()``) for the draws — validated, kernel-backed, and
+    O(1) per draw. Use the raw generator methods below when that genuinely
+    doesn't fit (e.g. continuous uniforms or ad-hoc index draws).
+
 DynaML offers two generator families with an identical method surface:
 
 - `dynaplex.default_rng(seed)` returns a `dynaplex.Generator` — DynaPlex's
@@ -675,10 +707,6 @@ Methods on both families:
     - The NumPy-only keyword arguments `size=`, `replace=`, `axis=`, and
       `shuffle=` are not supported.
 
-In addition, `dynaplex.reseed(rng, seed)` re-seeds an existing generator of
-either family in place, exactly as if it had been freshly constructed with
-that seed.
-
 !!! note "Reproducibility"
     For the NumPy family, `rng.random()` and `rng.uniform()` reproduce
     NumPy's streams bit-for-bit. `rng.choice(n)` (integer form) uses a
@@ -689,30 +717,9 @@ that seed.
 
 ### DynaPlex built-ins
 
-These functions are importable from `dynaplex` and can be called inside
-compiled DynaML code:
-
-- **`clone(x)`** — a deep copy of an object graph, list, or array. Constant
-  (`@const_dataclass`) parts are shared rather than copied.
-- **`clone_into(src, dst)`** — deep *in-place* assignment: makes `dst`
-  structurally equal to `src` while preserving the identity of `dst` and
-  its sub-objects where possible. Both arguments must be of the same
-  mutable class. External references to `dst`'s sub-objects observe the
-  update. NumPy array fields are copied in place when shapes match exactly,
-  and replaced by a fresh array otherwise. Useful for re-initializing
-  long-lived state objects without allocation.
-- **`combine_seeds(eval, global_seed, sample, trajectory, stream)`** —
-  packs coordinates into a single collision-free non-negative seed, for
-  constructing independent random streams in simulation experiments.
-- **`dynaplex.monotonic()`** — a monotonic wall-clock reading in seconds
-  (like `time.perf_counter`), coherent across threads.
-- **`time.sleep(seconds)`** — suspends execution.
-
-!!! warning "Determinism"
-    `dynaplex.monotonic()` and `time.sleep` are the only deliberately
-    non-deterministic built-ins. Clock values must only be written to
-    timing/diagnostic buffers — never into state that affects transitions,
-    costs, or sampled results.
+**`clone(x)`** (importable from `dynaplex.modelling`) — a deep copy of an
+object graph, list, or array, callable inside compiled DynaML code.
+Constant (`@const_dataclass`) parts are shared rather than copied.
 
 ### Distributions and samplers
 
@@ -725,7 +732,9 @@ store them in (const) fields, and call their methods from compiled code.
   offset=0)`, `DiscreteDist.poisson(mean)`, `DiscreteDist.geometric(mean)`,
   `DiscreteDist.geometric_from_prob(p)`, `DiscreteDist.binomial(n, p)`,
   `DiscreteDist.negative_binomial(r, p)`,
-  `DiscreteDist.from_moments(mean, stdev)`.
+  and — building a distribution from a mean and standard deviation — the
+  two-moment fit `DiscreteDist.adan_eenige_resing(mean, stdev)` (Adan, van
+  Eenige & Resing, 1995).
 - Methods callable in compiled code: `sample(rng)`,
   `conditional_sample(rng, min_value)`, `min()`, `max()`,
   `probability_at(v)`, `expectation()`, `variance()`, `std()`, `entropy()`,
@@ -733,12 +742,49 @@ store them in (const) fields, and call their methods from compiled code.
 - One-shot draws without building a distribution:
   `DiscreteDist.poisson_sample(mean, rng)` and the analogous
   `*_sample` classmethods.
-- For tight loops that repeatedly draw from the same distribution, build a
-  sampler once: `make_alias_sampler(dist)` (recommended) or
-  `make_cdf_sampler(dist)`, then call `sampler.sample(rng)`.
+- **Whenever the distribution is static** (the same for every state — the
+  usual case), build a sampler once in the MDP's `__init__` —
+  `dist.alias_sampler()` — and draw with `sampler.sample(rng)`: O(1) per
+  draw. `dist.sample(rng)` is for the exceptional case where the
+  distribution object itself depends on the current state (e.g.
+  non-stationary demand); for
+  state-dependent *parameters*, the one-shot classmethods above avoid
+  building a distribution at all.
 
 See the bin packing tutorial for a worked example
 ([Python code](../tutorials/binpacking-mdp-code.md)).
+
+## Advanced runtime primitives
+
+The functions below are also callable inside compiled DynaML code, but they
+live in `dynaplex.runtime` and everyday modelling does not need them — they
+are building blocks for writing your own high-performance algorithm
+harnesses on top of the engine (see the
+[`dynaplex.runtime` API reference](api/runtime.md)):
+
+- **`clone_into(src, dst)`** — deep *in-place* assignment: makes `dst`
+  structurally equal to `src` while preserving the identity of `dst` and
+  its sub-objects where possible. Both arguments must be of the same
+  mutable class. External references to `dst`'s sub-objects observe the
+  update. NumPy array fields are copied in place when shapes match exactly,
+  and replaced by a fresh array otherwise. Useful for re-initializing
+  long-lived state objects without allocation.
+- **`reseed(rng, seed)`** — re-seeds an existing generator of either family
+  in place, exactly as if it had been freshly constructed with that seed;
+  the allocation-free companion to `clone_into` for recycling long-lived
+  trajectory state.
+- **`combine_seeds(eval, global_seed, sample, trajectory, stream)`** —
+  packs coordinates into a single collision-free non-negative seed, for
+  constructing independent random streams in simulation experiments.
+- **`monotonic()`** — a monotonic wall-clock reading in seconds
+  (like `time.perf_counter`), coherent across threads.
+- **`time.sleep(seconds)`** — suspends execution.
+
+!!! warning "Determinism"
+    `monotonic()` and `time.sleep` are the only deliberately
+    non-deterministic built-ins. Clock values must only be written to
+    timing/diagnostic buffers — never into state that affects transitions,
+    costs, or sampled results.
 
 ## Common pitfalls
 

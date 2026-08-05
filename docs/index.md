@@ -4,14 +4,8 @@
 ![DynaPlex logo](assets/images/logo.png){ width="420" }
 </div>
 
-DynaPlex is a Python library for solving Markov Decision Problems and similar
-models (POMDP, HMM). It supports deep reinforcement learning, approximate
-dynamic programming, classical parameterized policies, and exact methods based
-on policy and value iteration. Models in DynaPlex are written in Python, and
-executed by a fast multi-threaded engine with a bundled LLVM JIT.
-
-DynaPlex focuses on solving problems arising in Operations Management: Supply
-Chain, Transportation and Logistics, Manufacturing, and related fields.
+DynaPlex is an optimization library for solving Markov Decision Problems (MDPs). MDP models in DynaPlex are written in DynaML/Python and compiled into C++20 & LLVM kernels, greatly increasing simulation efficiency and reducing computation and training times. DynaPlex supports deep reinforcement learning, classical parameterized policies, and exact methods based on policy and value iteration. 
+DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc.
 
 ```bash
 pip install dynaplex
@@ -57,7 +51,8 @@ pip install dynaplex
 
     ---
 
-    Questions, bug reports, and discussion.
+    [Questions and discussion](https://github.com/DynaPlex/DynaPlex/discussions),
+    [bug reports and feature requests](https://github.com/DynaPlex/DynaPlex/issues).
 
     [:octicons-arrow-right-24: Getting help](community/getting-help.md)
 
