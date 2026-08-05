@@ -12,13 +12,18 @@ import numpy as np
 from numpy.typing import NDArray
 
 from dynaplex.modelling import (
-    Features,
-    HorizonType,
-    StateCategory,
-    TrajectoryContext,
+    AliasSampler,
     assert_mdp,
     assert_policy_for_mdp,
-    discover_num_features,
+    const_dataclass,
+    DiscreteDist,
+    featurizer,
+    GlobalStateWriter,
+    HorizonType,
+    make_alias_sampler,
+    StateCategory,
+    TrajectoryContext,
+    Validity,
 )
 
 
@@ -33,7 +38,7 @@ class State:
     category: StateCategory = StateCategory.AWAIT_EVENT
 
 
-@dataclass(init=False, slots=True)
+@const_dataclass(init=False, slots=True)
 class BinPackingMDP:
     """
     Bin Packing MDP is an infinite horizon online bin packing problem. 
@@ -47,65 +52,50 @@ class BinPackingMDP:
     """
     max_bin_size: int
     number_of_bins: int
-    weights: NDArray[np.int64]        # Possible weight values
-    weight_probs: NDArray[np.float64] # Probability of each weight
+    weight_dist: DiscreteDist         # Distribution of arriving weights
+    weight_sampler: AliasSampler      # O(1) repeated-draw sampler over weight_dist
     num_actions: int
     horizon_type: HorizonType
-    num_features: int
- 
+
 
     def __init__(
         self,
         max_bin_size: int,
         number_of_bins: int,
-        weight_probs: NDArray[np.float64],
-        weights: NDArray[np.int64] | None = None,
+        weight_dist: DiscreteDist,
     ):
         """
         Initialize the Bin Packing MDP with validation.
-        
+
         Args:
             max_bin_size: Maximum weight a bin can hold before overflow (must be > 0)
             number_of_bins: Number of bins available (must be > 0)
-            weight_probs: 1D array - probability distribution over weights (must sum to 1.0)
-            weights: 1D array - possible weight values (all must be > 0)
-                     If None, defaults to [0, 1, 2, ..., len(weight_probs)-1]
-                         
+            weight_dist: Distribution of the arriving weights (non-negative support);
+                         non-consecutive weight values are expressed as zero-probability
+                         gaps in the PMF (e.g. DiscreteDist.custom(probs, offset=10))
+
         Raises:
             AssertionError: If any validation checks fail
         """
         # NOTE: __init__ on the MDP class itself is never called by the dynaplex compiler,
         # so we can use any valid cpython code here, but the class must be a dataclass,
         # and other functions need to be valid DynaML code.
-        
+
         # Validating parameters
         assert max_bin_size > 0, "max_bin_size must be positive"
         assert number_of_bins > 0, "number_of_bins must be positive"
-        assert len(weight_probs) > 0, "weight_probs must not be empty"
-        assert weight_probs.ndim == 1, "weight_probs must be 1-dimensional"
-        assert np.all(weight_probs >= 0), "all probabilities must be non-negative"
-        assert np.isclose(np.sum(weight_probs), 1.0, atol=1e-6), "probabilities must sum to 1.0"
-        
-        # Handle weights
-        if weights is None:
-            weights = np.arange(len(weight_probs), dtype=np.int64)
-        else:
-            assert weights.ndim == 1, "weights must be 1-dimensional"
-            assert len(weights) == len(weight_probs), "weights must match weight_probs length"
-            assert np.all(weights > 0), "all weights must be positive"
-        
+        assert weight_dist.min() >= 0, "weights must be non-negative"
+
         # Set attributes
         # NOTE: only set attributes that are part of the annotation.
         self.max_bin_size = max_bin_size
         self.number_of_bins = number_of_bins
-        self.weights = weights
-        self.weight_probs = weight_probs
+        self.weight_dist = weight_dist
+        self.weight_sampler = make_alias_sampler(weight_dist)
         # Number of actions in the MDP that are potentially valid
         self.num_actions = number_of_bins
         # Horizon type for this MDP
         self.horizon_type = HorizonType.INFINITE
-        # Automatically discover the number of features; should call last!
-        self.num_features = discover_num_features(self)
 
 
     def get_initial_state(self, context: TrajectoryContext) -> State:
@@ -128,11 +118,9 @@ class BinPackingMDP:
             context: Trajectory context containing rng and cumulative_cost
         """
         # Sample a weight from the distribution
-        state.upcoming_weight = context.rng.choice(
-            self.weights,
-            p=self.weight_probs,
-        )
-        
+        state.upcoming_weight = self.weight_sampler.sample(context.rng)
+
+
         # Next, the agent must decide which bin to assign the weight to
         state.category = StateCategory.AWAIT_ACTION
         # time elapsed increases by 1
@@ -150,7 +138,7 @@ class BinPackingMDP:
         """
         # NOTE: do _not_ attempt to generate random numbers here; that is what modify_state_with_event is for.       
         
-        assert 0 <= action < self.number_of_bins, f"Invalid action: {action}"        
+        assert action >= 0 and action < self.number_of_bins, f"Invalid action: {action}"
         # Assign weight to the selected bin
         state.weight_vector[action] += state.upcoming_weight
         
@@ -169,20 +157,7 @@ class BinPackingMDP:
         state.category = StateCategory.AWAIT_EVENT
 
 
-    def write_features(self, state: State, features: Features) -> None:
-        """
-        Write feature vector representation of the state.
-        
-        Args:
-            state: Current state to extract features from
-            features: Features sink to write features to
-        """
-        # NOTE: function write_features must be valid DynaML code.
-        features.extend(state.weight_vector)
-        features.append(state.upcoming_weight)
-
-
-    def write_action_validity(self, state: State, valid: NDArray[np.bool_]) -> None:
+    def write_action_validity(self, state: State, valid: Validity) -> None:
         """
         Write action validity: valid[i] = True if action i is allowed in the current state
                                valid[i] = False otherwise.
@@ -191,15 +166,14 @@ class BinPackingMDP:
             state: Current state
             valid: Boolean array of length num_actions to write the validity mask to
         """
-        # All bins are always valid actions in this problem:
-        pass
-    
-        # NOTE: write_action_validity supports default true, so "pass" is equivalent to:
-        #for i in range(self.number_of_bins):
-        #    valid[i] = True
+        # All bins are always valid actions in this problem. write_action_validity must write EVERY
+        # entry (the contract is "valid[i] = True if allowed, False otherwise" — the caller's buffer
+        # is not pre-initialised), so set them all explicitly rather than relying on a default.
+        for i in range(self.number_of_bins):
+            valid.set(i, True)
 
 
-@dataclass(slots=True)
+@const_dataclass(slots=True)
 class LowestWeightPolicy:
     """
     Simple heuristic policy for the bin packing MDP.
@@ -232,7 +206,7 @@ class LowestWeightPolicy:
         return min_index
 
 
-@dataclass(slots=True)
+@const_dataclass(slots=True)
 class FirstFitPolicy:
     """
     First-fit heuristic policy.
@@ -248,3 +222,23 @@ class FirstFitPolicy:
                 return i        
         # If no bin can accommodate, use first bin
         return 0
+
+@featurizer
+@dataclass(slots=True)
+class BinPackingFeaturizer:
+    """Default featurizer for BinPackingMDP (@featurizer derives the holder and
+    synthesizes install/reset/finish — featurizers.md section 13)."""
+    mdp: BinPackingMDP
+    v: GlobalStateWriter
+
+    def write_features(self, state: State) -> None:
+        self.v.extend(state.weight_vector)
+        self.v.append(state.upcoming_weight)
+
+
+# Plumbing, safe to skip: @featurizer already attached the derived holder class as
+# an attribute (<Featurizer>.Holder); this line just gives it an importable
+# module-level name, so other files can `from ... import <Name>FeaturizerHolder`
+# and use it in type annotations. dcl() never needs this — it finds the holder
+# by itself. Only add such an alias when other code imports your holder by name.
+BinPackingFeaturizerHolder = BinPackingFeaturizer.Holder

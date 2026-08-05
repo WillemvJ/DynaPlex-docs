@@ -29,10 +29,9 @@ def _pypi_version(package: str, fallback: str = "0.0.0+unknown") -> str:
 release = _pypi_version("dynaplex")   # full package version, e.g. "1.10.1"
 version = release                     # shown in the version dropdown / theme
 
-# The site TITLE uses the bare name "DynaPlex" so it reads e.g. "DynaPlex 1.10.1
-# documentation" (not "DynaPlex 2 1.10.1", which double-counts the generation).
-# Descriptive prose elsewhere still refers to the product as "DynaPlex 2"; once a
-# 2.0 package is published the version alone makes the generation clear.
+# The product is called plain "DynaPlex" everywhere (decided 2026-08-04: the
+# "DynaPlex 2" working name clashed with the 1.x wheel versions; the rewrite
+# story lives in prose, not the name).
 project = "DynaPlex"
 authors = "DynaPlex contributors"
 copyright = f"2023 - {now.year}, {authors}"

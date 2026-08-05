@@ -1,34 +1,33 @@
-# DynaPlex 2 Docs
+# DynaPlex documentation
 
-DynaPlex 2 is a Python library for solving Markov Decision Problems and similar models (POMDP, HMM). MDP/POMDP Models in DynaPlex 2 are written in (a subset of) Python, and are interpreted using a custom fast interpreter that supports multi-threading and vectorization. DynaPlex 2 focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc.
+DynaPlex is a Python library for solving Markov Decision Problems and similar
+models (POMDP, HMM). MDP/POMDP models in DynaPlex are written in (a subset
+of) Python, and are interpreted using a custom fast interpreter that supports
+multi-threading and vectorization. DynaPlex focuses on solving problems
+arising in Operations Management: Supply Chain, Transportation and Logistics,
+Manufacturing, etc.
 
-## Requirements
+This repository holds the documentation source, built with
+[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
-- Python 3.13 only
-- Windows: AMD64
-- Linux: x86_64
-- macOS: modern hardware (Apple Silicon) only; no legacy intel hardware supported.
-- Algorithms require a compatible PyTorch install; use the PyTorch selector: https://pytorch.org/get-started/locally/
-
-build from source presently not supported.  
-
-## Installation
+## Working on the docs
 
 ```bash
-pip install dynaplex
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/mkdocs serve        # live preview at http://127.0.0.1:8000
 ```
 
-or 
+`mkdocs build --strict` must pass (no warnings) before publishing.
 
-```bash
-pip install dynaplex[complete]
-```
+- Content lives in `docs/` (Markdown).
+- `docs/downloads/` holds the runnable example scripts included in the
+  tutorial pages; they are copies of the tested originals in the code repo —
+  update them from there, do not edit in place.
+- Versioned deployment is done with [mike](https://github.com/jimporter/mike)
+  (see the docs plan in the code repo, `roadmap/docs_community_strategy.md`).
 
-## Documentation
+## Legacy
 
-Full docs and tutorials are available at https://dynaplex-docs.readthedocs.io/en/latest/  
-[ReadTheDocs](https://dynaplex-docs.readthedocs.io/en/latest/)
-
-## Support
-
-For support, bug reports, questions about DynaPlex and the docs, please use the github issue tracker: https://github.com/WillemvJ/DynaPlex-docs/issues
+The previous Sphinx/reStructuredText source is preserved unchanged under
+`source/` until the migration is finalized, then deleted.

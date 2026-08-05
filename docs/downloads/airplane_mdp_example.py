@@ -13,15 +13,16 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from dynaplex import PPOTrainerConfig, PPOTrainer
+from dynaplex import PPOTrainerConfig, PPOTrainer, default_rng
 from dynaplex.modelling import (
-    Features,
+    Validity,
     HorizonType,
     StateCategory,
     TrajectoryContext,
     assert_mdp,
     assert_policy_for_mdp,
-    discover_num_features,
+    featurizer,
+    GlobalStateWriter,
 )
 from dynaplex.utilities import simulate_episodes
 
@@ -59,7 +60,6 @@ class AirplaneMDP:
     customer_type_probs: list[float]
     num_actions: int
     horizon_type: HorizonType
-    num_features: int	
     
     def __init__(
         self,
@@ -102,8 +102,6 @@ class AirplaneMDP:
         self.horizon_type = HorizonType.FINITE
 
         # Discover the number of features; should be called last in __init__. 
-        # will discover that there are 3 features: remaining_days, remaining_seats, price_offered_per_seat
-        self.num_features = discover_num_features(self)
     
     def get_initial_state(self, context: TrajectoryContext) -> State:
         """
@@ -185,22 +183,7 @@ class AirplaneMDP:
             state.category = StateCategory.AWAIT_EVENT
     
     
-    def write_features(self, state: State, features: Features) -> None:
-        """
-        Write feature vector representation of the state.
-        
-        Args:
-            state: Current state to extract features from
-            features: Features sink to write features to
-        """
-        # NOTE: function write_features must be valid DynaML code.
-        features.append(state.remaining_days / self.initial_days)
-        features.append(state.remaining_seats / self.initial_seats)
-        features.append(state.price_offered_per_seat / self.average_price)
-        # NOTE: features also supports append_many and extend, e.g.:
-        # features.append_many(state.remaining_days, state.remaining_seats)
-    
-    def write_action_validity(self, state: State, valid: NDArray[np.bool_]) -> None:
+    def write_action_validity(self, state: State, valid: Validity) -> None:
         """
         Write action validity: valid[i] = True  if action i is allowed in the current state
                                valid[i] = False otherwise. 
@@ -210,8 +193,11 @@ class AirplaneMDP:
             valid: Boolean array of length num_actions to write the validity mask to
         """
         # NOTE: function write_action_validity must be valid DynaML code.
-        valid[0] = True                       # Reject is always allowed. 
-        valid[1] = state.remaining_seats > 0  # Can accept only if seats available 
+        valid.set(0, True)                       # Reject is always allowed. 
+        valid.set(1, state.remaining_seats > 0)  # Can accept only if seats available
+        
+        # at least one action must be valid. When in doubt, consider adding:
+        # assert np.any(valid), "No valid actions"
 
 
 # ============================================================================
@@ -263,6 +249,27 @@ class SimplePolicy:
 
 
 # ============================================================================
+# Featurizer — state representation OUTSIDE the MDP (roadmap/featurizers.md sec. 13)
+# ============================================================================
+
+@featurizer
+@dataclass(slots=True)
+class AirplaneFeaturizer:
+    """Featurizer: writer fields declare the representation, write_features fills one
+    batch row through them. @featurizer derives the FeatureHolder class (attached as
+    AirplaneFeaturizer.Holder) and synthesizes the install/reset/finish field-walks —
+    hand-writing them remains possible (roadmap/featurizers.md section 13.2)."""
+    mdp: AirplaneMDP
+    v: GlobalStateWriter
+
+    def write_features(self, state: State) -> None:
+        # NOTE: must be valid DynaML code.
+        self.v.append(state.remaining_days / self.mdp.initial_days)
+        self.v.append(state.remaining_seats / self.mdp.initial_seats)
+        self.v.append(state.price_offered_per_seat / self.mdp.average_price)
+
+
+# ============================================================================
 # Validation: Manual Simulation
 # ============================================================================
 
@@ -272,7 +279,7 @@ def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) 
     
     Useful for debugging and validating your MDP before training.
     """     
-    context = TrajectoryContext(rng=np.random.default_rng(seed))
+    context = TrajectoryContext(rng=default_rng(seed))
     state = mdp.get_initial_state(context)
     
     step = 0
@@ -376,7 +383,7 @@ def train_ppo_airplane() -> None:
     )
     
     # Train policy
-    ppo_trainer = PPOTrainer(mdp=mdp, config=config)
+    ppo_trainer = PPOTrainer(mdp=mdp, config=config, features=AirplaneFeaturizer)
     load_policy = False
     if load_policy:
         print("Loading previously trained policy...")
@@ -389,7 +396,7 @@ def train_ppo_airplane() -> None:
     
     # Compare with baseline
     print("=" * 80)
-    print("POLICY COMPARISON (Note: PPO does not easily beat the simple policy)")
+    print("POLICY COMPARISON (Note: PPO does not easily beat the simple policy in this example)")
     print("=" * 80)
     num_episodes = 1000
     trained_costs = simulate_episodes(mdp, trained_policy, num_episodes, seed=0)
@@ -403,4 +410,4 @@ def train_ppo_airplane() -> None:
 if __name__ == "__main__":
     main()
     # once a model is validated, you could consider training a policy:
-    # train_ppo_airplane()
+    train_ppo_airplane()

@@ -29,7 +29,10 @@ Or install with all optional dependencies:
 
 .. code-block:: bash
 
-   pip install dynaplex[complete]
+   pip install "dynaplex[complete]"
+
+.. note::
+   The quotes are required in some shells (notably zsh, the default on macOS), where square brackets would otherwise be interpreted as a pattern-matching expression.
 
 .. note::
    Even with a complete install, separate installation of PyTorch is still required for the RL algorithms.

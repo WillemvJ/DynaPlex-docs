@@ -1,0 +1,19 @@
+/* DynaPlex brand color as the Material primary. Adjust --dp-primary to taste. */
+:root {
+  --dp-primary: #1a355e;
+  --md-primary-fg-color: var(--dp-primary);
+  --md-primary-fg-color--light: #2c4a7c;
+  --md-primary-fg-color--dark: #122642;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: var(--dp-primary);
+}
+
+/* Landing page: center the logo, cap its width */
+.dp-hero img {
+  display: block;
+  margin: 0 auto 1rem auto;
+  max-width: 420px;
+  width: 100%;
+}
