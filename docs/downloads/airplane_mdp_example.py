@@ -248,7 +248,7 @@ class SimplePolicy:
 
 
 # ============================================================================
-# Featurizer — state representation OUTSIDE the MDP (roadmap/featurizers.md sec. 13)
+# Featurizer — state representation OUTSIDE the MDP
 # ============================================================================
 
 @featurizer
@@ -257,7 +257,7 @@ class AirplaneFeaturizer:
     """Featurizer: writer fields declare the representation, write_features fills one
     batch row through them. @featurizer derives the FeatureHolder class (attached as
     AirplaneFeaturizer.Holder) and synthesizes the install/reset/finish field-walks —
-    hand-writing them remains possible (roadmap/featurizers.md section 13.2)."""
+    hand-writing them remains possible."""
     mdp: AirplaneMDP
     v: GlobalStateWriter
 

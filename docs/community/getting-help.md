@@ -26,6 +26,19 @@ useful requests explain three things:
 2. why that is difficult with the current DynaML limitations;
 3. your proposed addition to DynaML.
 
+## Citing DynaPlex
+
+When using DynaPlex in your research, please cite:
+
+```bibtex
+@software{DynaPlex,
+  author = {Akkerman, Fabian and Begnardi, Luca and {Lo Bianco}, Riccardo and Temizoz, Tarkan and Mes, Martijn and {van Jaarsveld}, Willem},
+  title = {{DynaPlex} software library and documentation},
+  url = {https://github.com/DynaPlex/DynaPlex},
+  year = {2026}
+}
+```
+
 ## Contributing to the documentation
 
 The source of this documentation lives in the
