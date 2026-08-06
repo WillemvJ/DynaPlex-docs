@@ -51,6 +51,10 @@ plugins:
             - ../DynaPlex/build/Release/python
           options:
             docstring_style: google
+            # Stubs are authoritative: never fall back to importing/inspecting
+            # compiled modules (keeps pybind plumbing members off the pages and
+            # makes local-tree and installed-wheel builds render identically).
+            allow_inspection: false
             show_source: false
             show_root_heading: true
             show_root_full_path: false
