@@ -18,13 +18,9 @@ DynaML is designed to achieve two core requirements:
 To achieve these design goals, classes (states, MDPs) in DynaML are expressed
 as Python dataclasses, whereas transition functions are represented as Python
 methods on an MDP class that operate on objects of another dataclass: a State
-class.
-
-Classes and functions expressed in DynaML are also valid Python code, i.e.
-DynaML is a subset of Python, making it easy to learn. However, Python is
-also a very expressive language, which gives a lot of freedom. To make it
-easy for algorithms to *reason* about problems and implement efficient
-solutions, DynaML imposes certain structural and semantic properties, which
+class. Classes and functions expressed in DynaML are also valid Python code, i.e.
+DynaML is a subset of Python, making it easy to learn. At the same time, to enable static code
+analysis, DynaML imposes certain structural and semantic properties, which
 are described in this document.
 
 ## How DynaML code runs
@@ -655,6 +651,14 @@ of integers, e.g. `np.zeros((m, n), dtype=np.float64)`; `np.array` /
 `a[i]`, `a[i, j]`, `a[i, j, k]` — for both reading and assignment,
 including augmented assignment (`a[i] += w`) and negative indices. Slicing
 (`a[1:3]`, `a[i, :]`) is **not** supported.
+
+!!! warning "Array indices are not bounds-checked"
+    Unlike list indexing, which raises an error on an out-of-range index,
+    ndarray indexing is **not** bounds-checked at runtime: an out-of-range
+    index (outside `[-n, n - 1]` for a dimension of size `n`) silently
+    reads — or, on assignment, overwrites — unrelated memory. Validate
+    index arithmetic by running the model under plain CPython, where NumPy
+    raises `IndexError`.
 
 **Shape.** The size of dimension `k` is available as `a.shape[k]` (indexed
 access only; bare `a.shape` has no tuple type in DynaML).
