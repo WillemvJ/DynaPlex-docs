@@ -11,8 +11,6 @@ primitives for custom algorithm harnesses live in
 
 ::: dynaplex.DCL
 
-::: dynaplex.dcl.dcl
-
 ::: dynaplex.PPO
 
 ::: dynaplex.PPOConfig
