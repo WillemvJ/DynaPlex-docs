@@ -9,11 +9,25 @@ primitives for custom algorithm harnesses live in
 
 ## Sample collection and training
 
+::: dynaplex.DCL
+
 ::: dynaplex.dcl.dcl
 
-::: dynaplex.PPOTrainer
+::: dynaplex.PPO
 
-::: dynaplex.PPOTrainerConfig
+::: dynaplex.PPOConfig
+
+## Agents and networks
+
+::: dynaplex.NNAgent
+
+::: dynaplex.MLP
+
+::: dynaplex.Net
+
+::: dynaplex.train_network
+
+::: dynaplex.SampleSet
 
 ## Policy evaluation
 

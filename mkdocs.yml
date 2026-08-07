@@ -78,12 +78,18 @@ nav:
       - Airplane MDP — Python code: tutorials/airplane-mdp-code.md
       - Bin packing MDP: tutorials/binpacking-mdp.md
       - Bin packing MDP — Python code: tutorials/binpacking-mdp-code.md
+  - Training and evaluation:
+      - Comparing policies: training/policy-comparison.md
+      - Deep Controlled Learning: training/dcl.md
+      - PPO: training/ppo.md
+      - Vectorized gym environments: training/gym-environments.md
   - Language reference:
       - Language reference: reference/language-reference.md
   - API reference:
       - dynaplex: reference/api/core.md
       - dynaplex.modelling: reference/api/modelling.md
       - dynaplex.runtime: reference/api/runtime.md
+      - dynaplex.gym: reference/api/gym.md
   - Community:
       - Getting help: community/getting-help.md
       - Planned features: community/roadmap.md
