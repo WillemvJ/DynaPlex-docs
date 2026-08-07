@@ -86,6 +86,7 @@ nav:
       - dynaplex.runtime: reference/api/runtime.md
   - Community:
       - Getting help: community/getting-help.md
+      - Planned features: community/roadmap.md
       - Licensing: community/licensing.md
 
 markdown_extensions:

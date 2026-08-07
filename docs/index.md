@@ -2,7 +2,7 @@
 ![DynaPlex logo](assets/images/logo.png){ width="420" }
 </div>
 
-DynaPlex is an optimization library for solving Markov Decision Problems (MDPs). MDP models in DynaPlex are written in DynaML/Python and compiled into C++20 & LLVM kernels: you read and write canonical Python code, and get auto-vectorized C++ speed — greatly reducing simulation, computation and training times. DynaPlex supports deep reinforcement learning, classical parameterized policies, and exact methods based on policy and value iteration. 
+DynaPlex is an optimization library for solving Markov Decision Problems (MDPs). MDP models in DynaPlex are written in DynaML/Python and compiled into C++20 & LLVM kernels: you read and write canonical Python code, and get auto-vectorized C++ speed — greatly reducing simulation, computation and training times. DynaPlex supports deep reinforcement learning and classical parameterized policies; exact methods based on policy and value iteration are [planned](community/roadmap.md). 
 DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc.
 
 ```bash
