@@ -1,7 +1,3 @@
----
-title: DynaPlex
----
-
 <div class="dp-hero" markdown>
 ![DynaPlex logo](assets/images/logo.png){ width="420" }
 </div>
