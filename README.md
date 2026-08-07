@@ -1,13 +1,11 @@
 # DynaPlex
 
-DynaPlex is a Python library for solving Markov Decision Problems and
-similar models (POMDP, HMM), aimed at problems arising in operations management (OM), e.g. supply chain management,
-logistics, transportation, manufacturing and maintenance optimization. Models are written in
+DynaPlex is a Python library for solving Markov Decision Processes and
+similar models (POMDP, HMM). Its design prioritizes clean modelling and solving of problems arising in operations management (OM): supply chain management, transportation, manufacturing and warehousing, and maintenance optimization. Models are written in
 **DynaML** — a subset of Python suitable for modelling OM problems — and executed by a fast multi-threaded
 engine with a bundled LLVM JIT: you read and write canonical Python code,
 and get auto-vectorized C++ speed. Just as importantly, the library bundles
-algorithms such as deep controlled learning (DCL), specifically designed for highly stochastic problems
-arising in OM.
+algorithms such as deep controlled learning (DCL), specifically designed for the highly stochastic problems that arise in typical OM applications. 
 
 **[Documentation & tutorials](https://dynaplex.github.io/DynaPlex/)** ·
 **[PyPI](https://pypi.org/project/dynaplex/)** ·
@@ -17,14 +15,15 @@ arising in OM.
 
 DynaPlex has been rewritten from the ground up around a purpose-built
 engine that compiles and runs DynaML at native (C++) speed,
-multi-threaded, with the LLVM JIT bundled in the wheel. No C++ and no
-build step: `pip install dynaplex` is the whole setup.
+multi-threaded, with the LLVM JIT bundled in the wheel. No C++, no compiler, no build step needed: `pip install dynaplex` is the whole setup.
 
-With the rewrite, the engine's source is closed. DynaPlex ships as free
-pre-built wheels on PyPI, and this repository is the library's public
-home: the documentation source, the issue tracker and the discussions
-live here. Documentation contributions are welcome — every docs page has
-an edit button that leads back to this repo.
+DynaPlex is free to use for everyone — research, teaching, and
+commercial applications alike, with no feature or usage limits. It ships
+as pre-built wheels on PyPI under a free-use license; the engine's
+source is not published. This repository is the library's public home:
+the documentation source, the issue tracker and the discussions live
+here. Documentation contributions are welcome — every docs page has an
+edit button that leads back to this repo. See [License](#license) below.
 
 The original C++20 library is preserved in full — all branches, including
 the research branches — in the archived
@@ -69,6 +68,19 @@ When using DynaPlex in your research, please cite:
   year = {2026}
 }
 ```
+
+## License
+
+- **The DynaPlex engine** (the wheels on PyPI) is free to use for any
+  purpose — academic and commercial alike — under the DynaPlex License
+  Agreement included in every wheel as `LICENSE.txt`. The grant for each
+  version you obtain is royalty-free, perpetual and irrevocable, so
+  published results stay reproducible. Models and code you write with
+  DynaPlex are entirely yours. The engine's source code is not
+  published.
+- **This repository** (documentation, examples, supporting files) is
+  licensed under the [MIT License](LICENSE). By contributing, you agree
+  that your contributions are licensed under the same terms.
 
 ## Getting help
 
