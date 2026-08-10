@@ -1,4 +1,4 @@
-# API reference — `dynaplex.gym`
+# Gym interop
 
 Vectorized [Gymnasium](https://gymnasium.farama.org)-compatible environments
 over DynaPlex MDPs — see the

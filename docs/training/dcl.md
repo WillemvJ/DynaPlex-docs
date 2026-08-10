@@ -3,8 +3,7 @@
 Deep Controlled Learning (DCL) is DynaPlex's flagship training algorithm: an
 approximate policy iteration method that repeatedly improves a policy by
 simulating, for many sampled states, the consequences of each candidate action
-and training a neural network to reproduce the best decisions. It is
-particularly effective for the inventory-type problems DynaPlex focuses on;
+and training a neural network to reproduce the best decisions. It has proven remarkably effective for the highly stochastic sequential decision making problems that arise in operations management (OM), and that DynaPlex focuses on;
 see the
 [published paper](https://www.sciencedirect.com/science/article/pii/S0377221725000463)
 for the algorithm and benchmarks.
@@ -84,7 +83,7 @@ follows torch's determinism caveats.
 
 ## The result: an NNAgent
 
-Trained agents are [`NNAgent`](../reference/api/core.md#agents-and-networks)
+Trained agents are [`NNAgent`](../reference/api/training.md#agents-and-networks)
 bundles — featurizer reference, network spec, weights, and provenance — the
 common output format of DCL and [PPO](ppo.md) alike:
 

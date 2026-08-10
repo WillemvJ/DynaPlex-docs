@@ -79,7 +79,7 @@ to thousands is the intended regime. Three rules of thumb:
   good starting point at these batch sizes.
 
 All fields are documented on
-[`PPOConfig`](../reference/api/core.md#dynaplex.PPOConfig).
+[`PPOConfig`](../reference/api/training.md#dynaplex.PPOConfig).
 
 ## Correctness notes
 

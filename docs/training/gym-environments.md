@@ -23,7 +23,7 @@ for _ in range(1000):
     obs, rewards, terminated, truncated, infos = env.step(actions)
 ```
 
-Observations come from a [featurizer](../reference/api/core.md#featurizers)
+Observations come from a [featurizer](../reference/api/training.md#featurizers)
 (the observation space is a flat `Box[num_features]`), actions are
 `Discrete(mdp.num_actions)`, rewards are the **negated costs** incurred during
 the step, and the action-validity mask rides in `infos["action_mask"]`.

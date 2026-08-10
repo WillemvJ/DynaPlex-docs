@@ -74,5 +74,5 @@ backends.
 - `workers` (default: CPU count − 2) is a pure throughput knob; results do
   not depend on it.
 
-See the [API reference](../reference/api/core.md#policy-evaluation) for all
+See the [API reference](../reference/api/evaluation.md) for all
 options.
