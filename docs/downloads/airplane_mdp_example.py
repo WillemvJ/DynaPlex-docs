@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from dynaplex import MLP, PolicyComparer, PPO, PPOConfig, default_rng
+from dynaplex import MLP, PolicyComparer, PPO, PPOConfig, make_context
 from dynaplex.modelling import (
     Validity,
     HorizonType,
@@ -278,7 +278,7 @@ def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) 
     
     Useful for debugging and validating your MDP before training.
     """     
-    context = TrajectoryContext(rng=default_rng(seed))
+    context = make_context(seed)
     state = mdp.get_initial_state(context)
     
     step = 0

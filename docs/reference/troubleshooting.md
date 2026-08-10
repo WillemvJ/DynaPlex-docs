@@ -87,7 +87,10 @@ Two non-typo causes:
 ## Unsupported construct
 
 ```
-Unsupported expression type: DictComp
+Dictionaries are not supported in DynaML. Use a dataclass with named fields instead ...
+Tuples are not supported in DynaML. Use a dataclass with named fields, or separate variables. ...
+Sets are not supported in DynaML. Use a list instead.
+Unsupported expression type: ListComp
 Unsupported statement type: With
 Built-in function 'zip' not yet supported
 Only simple function calls and method calls supported (e.g., int(x) or obj.method())
@@ -95,14 +98,20 @@ Slice assignment is not supported. Use list[i] = value with an integer index.
 Nested tuple unpacking is not supported. Use separate assignment statements instead.
 ```
 
-DynaML is a subset of Python: dictionaries, sets, strings (beyond assert
-messages), comprehensions, lambdas, generator expressions, slicing, `with`,
-`try`, and most of the standard library are outside it. The
+DynaML is a subset of Python: dictionaries, tuples, sets, strings (beyond
+assert messages), comprehensions, lambdas, generator expressions, slicing,
+`with`, `try`, and most of the standard library are outside it. The
 [function bodies](language-reference.md#function-bodies) section lists what
-is in. The usual fixes: replace dicts keyed by small enums with dataclass
-fields or lists; replace comprehensions with explicit loops; replace slices
-with indexed loops; hoist unsupported preprocessing into the MDP `__init__`
-(which runs in full CPython) and store the result in supported fields.
+is in. The usual fixes:
+
+- Where you would reach for a dict or tuple, use a dataclass with named
+  fields — the direct DynaML equivalent of a small fixed key set — or a list
+  indexed by an `int` or enum for uniform collections. (Returning multiple
+  values from a function *is* supported: `return a, b` with `x, y = f(...)`
+  at the call site; only tuples as *values* are out.)
+- Replace comprehensions with explicit loops, and slices with indexed loops.
+- Hoist unsupported preprocessing into the MDP `__init__` (which runs in
+  full CPython) and store the result in supported fields.
 
 ## Cannot determine / infer a type
 

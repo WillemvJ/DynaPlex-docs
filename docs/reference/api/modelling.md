@@ -58,6 +58,10 @@ MDP's.
 
 ::: dynaplex.modelling.TrajectoryContext
 
+::: dynaplex.modelling.make_context
+
+::: dynaplex.modelling.reseed_context
+
 ::: dynaplex.modelling.Validity
 
 ## Const classes and annotations

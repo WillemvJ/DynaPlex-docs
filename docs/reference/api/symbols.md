@@ -34,6 +34,7 @@ Every public name in the API, with the page where it is documented.
 | [`GlobalStateWriter`][dynaplex.GlobalStateWriter] | `dynaplex` | [Training policies](training.md) |
 | [`HorizonType`][dynaplex.modelling.HorizonType] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`MDPProtocol`][dynaplex.modelling.MDPProtocol] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
+| [`make_context`][dynaplex.modelling.make_context] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`MLP`][dynaplex.MLP] | `dynaplex` | [Training policies](training.md) |
 | [`monotonic`][dynaplex.runtime.monotonic] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`Net`][dynaplex.Net] | `dynaplex` | [Training policies](training.md) |
@@ -46,6 +47,7 @@ Every public name in the API, with the page where it is documented.
 | [`Program`][dynaplex.runtime.Program] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`Rank`][dynaplex.modelling.Rank] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`reseed`][dynaplex.runtime.reseed] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
+| [`reseed_context`][dynaplex.modelling.reseed_context] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`SampleSet`][dynaplex.SampleSet] | `dynaplex` | [Training policies](training.md) |
 | [`separate_world_class`][dynaplex.runtime.separate_world_class] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`StateCategory`][dynaplex.modelling.StateCategory] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |

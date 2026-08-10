@@ -63,7 +63,9 @@ Test your code in CPython. Validate in pyright — if that complains, then it
 is likely that the code is not valid DynaML. Calling the runtime no-ops
 `assert_mdp(mdp)` and `assert_policy_for_mdp(mdp, policy)` in your script
 additionally makes pyright check that your classes satisfy the interfaces
-DynaPlex expects. If something fails to compile,
+DynaPlex expects. If something fails to compile, look up the error message
+on the [troubleshooting page](troubleshooting.md), which groups the common
+compile errors by family with causes and fixes. Alternatively,
 use an LLM, pointing it to this reference document and to your code, and it
 will likely tell you what is wrong. If not, post a question on
 [GitHub Discussions](https://github.com/DynaPlex/DynaPlex/discussions).
@@ -552,8 +554,11 @@ Not supported: `.index()`, `.count()`, `.insert()`, `.remove()`,
 
 The following Python features are presently unsupported, and not planned for
 future support in DynaML: strings (there is no `str` type — use enums);
-dictionaries; sets; tuples (except for returning multiple values, which must
-be immediately bound to individual variables by the caller, see above);
+dictionaries; sets; tuples (with two syntactic exceptions: returning
+multiple values, which must be immediately bound to individual variables by
+the caller, see above; and in-place shape literals in
+[array creators](#numpy-arrays) such as `np.zeros((m, n), ...)` — in
+neither case is the tuple a value that can be stored or passed around);
 lambdas; `isinstance` and other runtime introspection.
 
 !!! tip "Missing something? DynaML is in rapid development"
