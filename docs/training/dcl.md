@@ -48,6 +48,16 @@ Generation 0 rolls out the initial policy you supplied; every later generation
 rolls out the previous generation's agent. A few generations typically
 converge to a policy that clearly beats the initial heuristic.
 
+!!! tip "No heuristic at hand? Start from random."
+    A sensible domain heuristic is still the best generation-0 policy — it
+    concentrates sampling on relevant states from the start. When none is
+    available, the built-in
+    [`RandomPolicy`](../reference/api/training.md#built-in-policies) fills
+    the gap: `dp.DCL(mdp, RandomPolicy(mdp), ...)` works for **any** MDP
+    (it picks uniformly among the actions the MDP marks valid) and gives
+    DCL a legitimate zero-knowledge starting point; the first trained
+    generation then replaces it as the rollout policy.
+
 ## Artifacts and resumability
 
 Everything lands in a **workdir** derived from the *structure* of the

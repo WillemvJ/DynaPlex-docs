@@ -48,7 +48,61 @@ MDP's.
 
 ::: dynaplex.modelling.MDPProtocol
 
+## Policies: the two shapes
+
+A policy maps a decision state to an action index. DynaPlex recognizes
+exactly two `get_action` signatures and tells the policy kinds apart by
+shape:
+
+```python
+@const_dataclass
+class GreedyPolicy:                    # deterministic — by construction
+    mdp: MyMDP
+
+    def get_action(self, state: MyState) -> int: ...
+
+@const_dataclass
+class NoisyPolicy:                     # context-driven
+    mdp: MyMDP
+
+    def get_action(self, state: MyState, context: TrajectoryContext) -> int: ...
+```
+
+A policy with the `(self, state)` signature is deterministic **by
+construction**: it is never handed a source of randomness, so there is
+nothing it could draw from. Adding the second parameter — the exact name
+`context` with the exact annotation `TrajectoryContext` — makes the policy
+*context-driven*: the built-in algorithms (the
+[comparer](../../training/policy-comparison.md), [DCL](../../training/dcl.md))
+pass the trajectory's context on every call. Through it the policy can use:
+
+- **`context.policy_rng`** — a random stream dedicated to policy draws,
+  separate from the event stream and reseeded per trajectory from global
+  coordinates. Results with a context-driven policy are therefore
+  reproducible, independent of the number of worker threads, and safe for
+  [common-random-number](../../training/policy-comparison.md) comparisons.
+- **`context.valid`** — a reusable action-validity scratch (a
+  `ValidityWriter` sized to the MDP's action space). Hand it to
+  `mdp.write_action_validity(state, context.valid)` and read the mask back
+  from it — no per-call allocation. It is overwritten on every use and
+  carries no meaning between calls.
+
+The shape is validated before anything compiles or runs: exact parameter
+names, exact annotations, plain positional parameters, no defaults and no
+`*args`. Anything else is rejected with an error naming both accepted
+signatures.
+
+!!! warning "Rules a context-driven policy must follow"
+    The context also exposes trajectory state that a policy must leave
+    alone. Draw **only** from `context.policy_rng` — never from
+    `context.rng`, which is the MDP's event stream (touching it silently
+    breaks common-random-number comparisons) — and never write
+    `context.cumulative_cost` or `context.time_elapsed`. These rules are
+    not yet enforced mechanically; today they are part of the contract.
+
 ::: dynaplex.modelling.PolicyProtocol
+
+::: dynaplex.modelling.ContextPolicyProtocol
 
 ## States and trajectories
 
@@ -110,6 +164,10 @@ and [NumPy arrays](../language-reference.md#numpy-arrays).
 ::: dynaplex.modelling.assert_policy_for_mdp
 
 ::: dynaplex.modelling.assert_featurizer_for_mdp
+
+::: dynaplex.modelling.implements
+
+::: dynaplex.modelling.conforms
 
 ## Errors
 

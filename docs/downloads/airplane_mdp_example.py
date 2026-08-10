@@ -278,7 +278,7 @@ def simulate_episode(mdp: AirplaneMDP, policy: SimplePolicy, *, seed: int = 42) 
     
     Useful for debugging and validating your MDP before training.
     """     
-    context = make_context(seed)
+    context = make_context(mdp, seed)
     state = mdp.get_initial_state(context)
     
     step = 0

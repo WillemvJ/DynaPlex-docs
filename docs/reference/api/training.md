@@ -15,6 +15,10 @@ policies, see [evaluating policies](evaluation.md).
 
 ::: dynaplex.SampleSet
 
+## Built-in policies
+
+::: dynaplex.models.RandomPolicy
+
 ## Featurizers
 
 ::: dynaplex.featurizer

@@ -23,6 +23,7 @@ Every public name in the API, with the page where it is documented.
 | [`ConstArray2D`][dynaplex.modelling.ConstArray2D] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`ConstArray3D`][dynaplex.modelling.ConstArray3D] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`ConstList`][dynaplex.modelling.ConstList] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
+| [`ContextPolicyProtocol`][dynaplex.modelling.ContextPolicyProtocol] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`DataModel`][dynaplex.runtime.DataModel] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`DCL`][dynaplex.DCL] | `dynaplex` | [Training policies](training.md) |
 | [`default_rng`][dynaplex.default_rng] | `dynaplex` | [Distributions and randomness](randomness.md) |
@@ -45,6 +46,7 @@ Every public name in the API, with the page where it is documented.
 | [`PPO`][dynaplex.PPO] | `dynaplex` | [Training policies](training.md) |
 | [`PPOConfig`][dynaplex.PPOConfig] | `dynaplex` | [Training policies](training.md) |
 | [`Program`][dynaplex.runtime.Program] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
+| [`RandomPolicy`][dynaplex.models.RandomPolicy] | `dynaplex.models` | [Training policies](training.md) |
 | [`Rank`][dynaplex.modelling.Rank] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`reseed`][dynaplex.runtime.reseed] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`reseed_context`][dynaplex.modelling.reseed_context] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |

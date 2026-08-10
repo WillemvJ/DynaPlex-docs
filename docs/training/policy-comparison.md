@@ -3,9 +3,12 @@
 `PolicyComparer` is DynaPlex's evaluation tool: it estimates the performance
 of any policy on an MDP, and compares several policies head-to-head on
 **common random numbers**. A "policy" here is anything with a
-`get_action(state)` method — a hand-written benchmark rule, a classical
-parameterized policy — or a trained [`NNAgent`](dcl.md#the-result-an-nnagent)
-produced by [DCL](dcl.md) or [PPO](ppo.md).
+`get_action(state)` or `get_action(state, context)` method (the
+[two policy shapes](../reference/api/modelling.md#policies-the-two-shapes)) —
+a hand-written benchmark rule, a classical parameterized policy, the built-in
+[`RandomPolicy`](../reference/api/training.md#built-in-policies) — or a
+trained [`NNAgent`](dcl.md#the-result-an-nnagent) produced by [DCL](dcl.md)
+or [PPO](ppo.md).
 
 ```python
 import dynaplex as dp
