@@ -28,3 +28,6 @@ env/
 .DS_Store
 Thumbs.db
 
+
+# Materialized at build time from the dynaplex package (hooks/materialize_downloads.py)
+docs/downloads/*.py
