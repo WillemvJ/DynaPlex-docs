@@ -1,0 +1,11 @@
+# Retirement config: builds a single page that redirects to the new docs
+# at https://dynaplex.github.io/DynaPlex/. Combined with the forced /* 
+# redirect configured in the RTD dashboard, this fully retires the site.
+version: 2
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  commands:
+    - mkdir -p $READTHEDOCS_OUTPUT/html
+    - cp src/index.html $READTHEDOCS_OUTPUT/html/index.html
