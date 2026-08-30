@@ -17,6 +17,7 @@ STAGED = REPO.parent / "DynaPlex" / "build" / "Release" / "python" / "dynaplex"
 # download filename -> path inside the dynaplex package
 SOURCES = {
     "airplane_mdp_example.py": "examples/airplane_mdp_example.py",
+    "airplane_statistics_example.py": "examples/airplane_statistics_example.py",
     "binpacking.py": "models/binpacking.py",
     "binpacking_dcl.py": "examples/binpacking_dcl.py",
 }
