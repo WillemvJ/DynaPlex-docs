@@ -30,6 +30,7 @@ Every public name in the API, with the page where it is documented.
 | [`Dtype`][dynaplex.modelling.Dtype] | `dynaplex.modelling` | [Training policies](training.md) |
 | [`DynaPlexError`][dynaplex.DynaPlexError] | `dynaplex` | [Modelling MDPs](modelling.md) |
 | [`Engine`][dynaplex.runtime.Engine] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
+| [`fail`][dynaplex.fail] | `dynaplex` | [Modelling MDPs](modelling.md) |
 | [`feature_spec`][dynaplex.modelling.feature_spec] | `dynaplex.modelling` | [Training policies](training.md) |
 | [`featurizer`][dynaplex.featurizer] | `dynaplex` | [Training policies](training.md) |
 | [`Featurizer`][dynaplex.Featurizer] | `dynaplex` | [Training policies](training.md) |
@@ -54,6 +55,8 @@ Every public name in the API, with the page where it is documented.
 | [`Program`][dynaplex.runtime.Program] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`RandomPolicy`][dynaplex.RandomPolicy] | `dynaplex` | [Training policies](training.md) |
 | [`Rank`][dynaplex.modelling.Rank] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
+| [`RehearsalReport`][dynaplex.RehearsalReport] | `dynaplex` | [Evaluating policies](evaluation.md) |
+| [`rehearse`][dynaplex.rehearse] | `dynaplex` | [Evaluating policies](evaluation.md) |
 | [`reseed`][dynaplex.runtime.reseed] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
 | [`trajectory_context`][dynaplex.modelling.trajectory_context] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |
 | [`validity_scratch`][dynaplex.modelling.validity_scratch] | `dynaplex.modelling` | [Modelling MDPs](modelling.md) |

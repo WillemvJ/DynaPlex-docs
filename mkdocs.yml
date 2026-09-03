@@ -84,6 +84,7 @@ nav:
       - Comparing policies: training/policy-comparison.md
       - Featurizers: training/featurizers.md
       - Deep Controlled Learning: training/dcl.md
+      - Machines and execution plans: training/machines.md
       - PPO: training/ppo.md
       - Vectorized gym environments: training/gym-environments.md
   - Advanced:
@@ -91,6 +92,7 @@ nav:
   - Language reference:
       - Language reference: reference/language-reference.md
       - Troubleshooting compile errors: reference/troubleshooting.md
+      - Promises (model validation): reference/promises.md
   - API reference:
       - Modelling MDPs: reference/api/modelling.md
       - Distributions and randomness: reference/api/randomness.md

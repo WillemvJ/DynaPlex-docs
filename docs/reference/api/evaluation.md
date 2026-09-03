@@ -10,3 +10,13 @@ package.
 ::: dynaplex.PolicyAssessment
 
 ::: dynaplex.Comparison
+
+## Rehearsal
+
+The model checker: the checked pass every algorithm runs by default
+(`checks="rehearsal"`), as a standalone call. See *Language reference →
+Runtime checks and fast mode*.
+
+::: dynaplex.rehearse
+
+::: dynaplex.RehearsalReport

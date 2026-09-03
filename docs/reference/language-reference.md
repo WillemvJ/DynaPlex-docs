@@ -551,14 +551,49 @@ def sum_points(points: list[Point]) -> tuple[int, int]:
     return sum_x, sum_y
 ```
 
-### Assertions
+### Assertions, `__debug__` and `dynaplex.fail`
 
-`assert condition` and `assert condition, "message"` are supported. The
-message may be a string literal or a simple f-string containing bare
-`{expr}` placeholders, which is convenient when debugging:
+`assert condition, "message"` is supported and means what it means in
+Python: a **check**, present when the program runs with checks and absent
+when it does not — exactly as CPython drops `assert` under `python -O`. The
+message is required and may be a string literal or a simple f-string with
+bare `{expr}` placeholders:
 
 ```python
 assert state.remaining_seats >= 0, f"negative seats: {state.remaining_seats}"
+```
+
+DynaPlex compiles every model twice over its life: once **checked**, where
+each `assert` is live and a violation raises `DynaPlexError` with the
+message, and once **fast**, where the asserts (and the bounds checks on list
+indexing) are compiled out so the hot loops run branch-free. Which one you
+get is described in [Runtime checks and fast mode](#runtime-checks-and-fast-mode);
+by default every algorithm rehearses your model checked before running it
+fast. Two consequences follow from the Python semantics:
+
+- an `assert` condition must be pure — it is not evaluated in fast mode, so
+  it cannot be the thing that advances the state;
+- an `assert` is not the way to *fail on purpose*. For the branch that must
+  never be reached — no feasible action, an impossible case — use
+  **`dynaplex.fail("message")`**. It fires in every mode, in CPython it
+  raises `DynaPlexError`, and the compiler treats it as never returning, so
+  a method may end on it and code after it is dead:
+
+```python
+def get_action(self, state: State) -> int:
+    for a in range(self.mdp.num_actions):
+        if self.feasible(state, a):
+            return a
+    dynaplex.fail("no feasible action")     # NoReturn: the method ends here
+```
+
+`__debug__` is the compile-time checks flag (`True` checked, `False` fast),
+as in CPython. `if __debug__:` compiles only the taken branch, so an
+expensive invariant walk costs nothing in fast mode:
+
+```python
+if __debug__:
+    self.verify_invariants()
 ```
 
 `print(...)` is *accepted but ignored* in compiled code: no instructions are
@@ -728,7 +763,8 @@ exactly as its CPython counterpart unless noted otherwise.
 | `len(xs)` | list length |
 | `sorted(xs)` | new sorted list; same element requirements as `.sort()` |
 | `range(...)`, `enumerate(...)` | loop headers only, see [control flow](#control-flow) |
-| `assert cond, msg` | supported; `msg` may be a simple f-string |
+| `assert cond, msg` | a *check*: live in checked mode, compiled out in fast mode (Python `-O` semantics); `msg` may be a simple f-string |
+| `__debug__` | compile-time bool: `True` checked, `False` fast; `if __debug__:` keeps only the taken branch |
 | `print(...)` | accepted but **ignored** (no code generated) |
 
 ### `math` module
@@ -914,6 +950,10 @@ Methods on both families:
 object graph, list, or array, callable inside compiled DynaML code.
 Constant (`@const_dataclass`) parts are shared rather than copied.
 
+**`dynaplex.fail(msg)`** — unconditional failure: raises `DynaPlexError(msg)`
+in every mode (checked, fast and CPython) and never returns. `msg` follows the
+assert-message rules. See [Assertions](#assertions-__debug__-and-dynaplexfail).
+
 ### Distributions and samplers
 
 The modelling toolkit provides `DiscreteDist` — an explicit distribution
@@ -1041,6 +1081,101 @@ the MDP is bound (`infer_context_type`):
   `time_elapsed` restart from zero while the draw streams run on. Code that
   reads the context mid-trajectory observes this reset.
 
+## Promises: what a method may do to a parameter
+
+The rules above are about *types*. A second family of rules is about *roles*:
+`modify_state_with_action` must not draw random numbers, the context's cost
+accumulator is an output channel that a model may only add to, a policy must
+not modify the state it is given. Nothing about a method's signature says so,
+and a model that breaks one of these compiles and runs — and then fails
+subtly, because every harness (the comparer, DCL, PPO) relies on them. DynaPlex
+therefore lets a class **carry promises** about its methods, and the compiler
+checks them whenever the methods compile.
+
+A promise is always *a method's* promise about *one of its parameters*: what
+may happen to the parameter, or to a named field under it, or to every value of
+a given type reachable from it. The same context field can be accumulate-only
+in the event function and freely readable in a policy — promises are never
+attached to fields.
+
+### `@mdp` and `@policy`
+
+Put `@mdp` above `@const_dataclass` on an MDP class and `@policy` above a
+policy class (both importable from `dynaplex`). Featurizers get their promise
+from `@featurizer`. An undecorated class carries no promises and nothing is
+checked.
+
+```python
+from dynaplex import mdp, policy, const_dataclass
+
+@mdp
+@const_dataclass(init=False, slots=True)
+class LostSalesMDP:
+    ...
+
+@policy
+@const_dataclass(slots=True)
+class BaseStockPolicy:
+    ...
+```
+
+`@mdp` promises, for every compiled variant of the method:
+
+| method | promise |
+|---|---|
+| `modify_state_with_event(state, context)` | `context.cumulative_cost` appears only as the target of `+=` / `-=`; `context.time_elapsed` only as the target of `+=`; no generator under `context` (`rng`, `policy_rng`, or any stream your own context adds) is re-bound or stored into a field or container |
+| `modify_state_with_action(state, context, action)` | the same, and **no generator under `context` is used at all** |
+| `write_action_validity(state, valid)` | `state` is only read |
+
+`@policy` promises for `get_action(state)` / `get_action(state, context)`:
+`state` is only read; no generator under `context` other than
+`context.policy_rng` is used; `context.cumulative_cost` is not read.
+`@featurizer` promises that `write_features(state)` only reads the state.
+
+"Only read" is transitive: passing the state to a helper that modifies it
+counts, and so does `state.pipeline.pop_front()`. "Used" covers reads, calls,
+and handing the value to another function. The checks are static, over the
+compiled code; plain CPython (running the same methods without DynaPlex) stays
+permissive, as for every other rule in this reference.
+
+A violation is a compile error naming the model's line and teaching the rule:
+
+```
+MDP model validation failed:
+In function 'MyMDP.modify_state_with_action$State$TrajectoryContext$Int' (my_model.py), line 2:
+context.rng is used (load) — breaks the MDP promise 'action-deterministic' (NoUse on every Generator under context).
+  modify_state_with_action must be deterministic given (state, action): randomness belongs in
+  modify_state_with_event, so every policy sees the same event stream (common random numbers).
+  Line 2:     state.on_hand += int(context.rng.random())
+```
+
+### An algorithm's promises
+
+Some algorithms need more than the base contract. The exact solver, for
+instance, derives the event distribution from `modify_state_with_event` and
+needs it to draw exactly once, as its first statement, through a sampler
+stored on `self` or selected by the state. Such a set is a `RoleContract`
+(here `dynaplex.validation.DISCRETE_IDENTIFIABLE_EVENTS`). An algorithm checks it when it
+is constructed; a model author who wants the check at compile time declares
+it up front:
+
+```python
+from dynaplex.validation import DISCRETE_IDENTIFIABLE_EVENTS
+
+@mdp(promises=DISCRETE_IDENTIFIABLE_EVENTS)
+@const_dataclass(init=False, slots=True)
+class LostSalesMDP:
+    ...
+```
+
+Every promise is named; the [promises reference](promises.md) states each
+assumption, what breaks it and how to fix it. Your own contracts use the same vocabulary — a selector (`Param`, `Path`,
+`OfType`, combinable with `-`) and a constraint (`NoUse`, `ReadOnly`,
+`Accumulate`, `BindOnce`, `SingleCall`) per promise — and
+`dynaplex.validation.validate(engine, contract, cls=MyMDP)` evaluates one
+without raising, returning a verdict with the violations. See the API page
+[Modelling MDPs → Promises](api/modelling.md#promises).
+
 ## Advanced runtime primitives
 
 The functions below are also callable inside compiled DynaML code, but they
@@ -1072,6 +1207,54 @@ harnesses on top of the engine (see the
     non-deterministic built-ins. Clock values must only be written to
     timing/diagnostic buffers — never into state that affects transitions,
     costs, or sampled results.
+
+## Runtime checks and fast mode
+
+Compiled code can run in two modes. **Checked** keeps every runtime check:
+`assert` statements, `if __debug__:` blocks, and the bounds checks on list
+indexing (`xs[i]` raises on an index out of range, as in Python). **Fast**
+compiles all of those out: an `assert` costs nothing, `xs[i]` is a plain
+load with Python's negative-index wrap but no range check, and the loops the
+featurizers and policies spend their time in become branch-free — which is
+what lets the JIT hoist and vectorize them. In fast mode a violated check is
+*undefined behaviour*, the same trade a C release build makes: an index out
+of range reads or writes the wrong memory instead of raising. Results are
+bit-identical between the modes whenever no check would have fired.
+
+The mode is a single flag on the compile entry points and on every algorithm:
+
+```python
+dynaplex.Engine(Root, ..., checks=False)        # fast
+dynaplex.Program(fns, checks=True)              # checked (the default for Engine/Program)
+dynaplex.PolicyComparer(mdp, checks="rehearsal")   # the default for the algorithms
+dynaplex.DCL(mdp, policy, features=F, checks="rehearsal")
+dynaplex.gym.VectorEnv(mdp, features=F, checks="rehearsal")
+```
+
+For the algorithms the default is **`"rehearsal"`**: the algorithm first
+compiles the model checked and runs a short seeded pass through the very
+same kernels it will use — the comparer evaluates each policy on 32
+trajectories, the gym env steps a small twin with random valid actions, DCL
+runs a tiny collection — and only then compiles fast and does the real work.
+A deterministic misuse (a feature-count mismatch, an always-violated assert)
+therefore raises before the fast run starts, with the message you wrote.
+`checks=True` runs everything checked; `checks=False` skips the rehearsal.
+
+Rare-state failures are probabilistic and can slip through a rehearsal. The
+environment variable **`DYNAPLEX_CHECKS=1`** reruns any script fully checked
+without a code change (`DYNAPLEX_CHECKS=0` forces fast); an explicit
+`checks=` argument always wins over the environment. To check a model on its
+own, before any experiment, call the same step directly:
+
+```python
+report = dynaplex.rehearse(mdp, policy, features=MyFeaturizer, trajectories=64)
+```
+
+`rehearse` validates the policy shape and the featurizer declaration, runs the
+checked simulation, and additionally compares the compiled results bytewise
+against the same trajectories in CPython — a compiler divergence is the one
+class of problem a model author cannot see, and it is reported here as a
+`RuntimeError`. See [`dynaplex.rehearse`](api/evaluation.md#rehearsal).
 
 ## Common pitfalls
 
