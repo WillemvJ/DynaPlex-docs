@@ -42,12 +42,13 @@ An undecorated class carries no promises; nothing is checked for it.
 ## MDP
 
 What we expect from every MDP class (`@mdp` above `@const_dataclass`): its
-transition methods treat the context as the harness's bookkeeping and its query
-methods leave the state alone. In detail:
+event-side methods — `get_initial_state` and the two transitions — treat the
+context as the harness's bookkeeping, and its query methods leave the state
+alone. In detail:
 
 ### cost-accumulate-only
 
-*Methods:* `modify_state_with_event`, `modify_state_with_action`.
+*Methods:* `get_initial_state`, `modify_state_with_event`, `modify_state_with_action`.
 *Rule:* `context.cumulative_cost` appears only as the target of `+=` or `-=`.
 
 **Assumption.** The cost accumulator is an *output channel* owned by the
@@ -58,13 +59,15 @@ in its state — and a model that assigns it discards cost the harness has
 already accounted.
 
 **Breaks it:** `if context.cumulative_cost > 100:`, `context.cumulative_cost =
-...`, `context.cumulative_cost *= ...`, passing the value to a helper.
+...`, `context.cumulative_cost *= ...`, passing the value to a helper —
+including `context.cumulative_cost = 0.0` in `get_initial_state`: the harness
+starts every trajectory at zero itself, and resets after warm-up.
 **Fix:** if a decision or transition depends on cost so far, make that quantity
 part of your State and maintain it there.
 
 ### time-accumulate-only
 
-*Methods:* `modify_state_with_event`, `modify_state_with_action`.
+*Methods:* `get_initial_state`, `modify_state_with_event`, `modify_state_with_action`.
 *Rule:* `context.time_elapsed` appears only as the target of `+=`.
 
 **Assumption.** Elapsed time is harness bookkeeping too: the comparer's warm-up
@@ -76,7 +79,7 @@ dynamics belong in the State (the airplane model keeps `remaining_days`).
 
 ### rng-bind-once
 
-*Methods:* `modify_state_with_event`, `modify_state_with_action`.
+*Methods:* `get_initial_state`, `modify_state_with_event`, `modify_state_with_action`.
 *Rule:* no generator under `context` is re-bound, re-seeded, or stored into a
 field or a container; the only thing a model does to a stream is draw from it.
 
@@ -98,9 +101,12 @@ promise failure; the promise adds the aliasing rule that `Final` cannot express.
 
 ### event-stream-only
 
-*Method:* `modify_state_with_event`.
+*Methods:* `get_initial_state`, `modify_state_with_event`.
 *Rule:* `context.policy_rng` is not used — not directly, not through a
-sampler, not by handing it to a helper that draws.
+sampler, not by handing it to a helper that draws. (`get_initial_state` *may*
+draw from `context.rng`: a random start is fine under this contract; only the
+exact solver's [deterministic-initial-state](#deterministic-initial-state)
+forbids it.)
 
 **Assumption.** The policy stream belongs to the policy. The event step draws
 from `context.rng` (or from a stream your own context adds, such as a separate

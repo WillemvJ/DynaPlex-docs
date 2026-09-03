@@ -50,7 +50,7 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 ### Model validation: classes carry promises
 
 - **`@mdp` and `@policy`** (importable from `dynaplex`; apply above `@const_dataclass`):
-  the class promises the MDP / policy contract for its methods — the cost accumulator is
+  the class promises the MDP / policy contract for its methods — in `get_initial_state` and the transitions, the cost accumulator is
   `+=`/`-=`-only, `time_elapsed` is `+=`-only, no generator is used in
   `modify_state_with_action`, the event step never draws from `policy_rng`, generators are
   never re-bound or stored, `write_action_validity` and `get_action` only read the state, a
