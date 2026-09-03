@@ -52,9 +52,10 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 - **`@mdp` and `@policy`** (importable from `dynaplex`; apply above `@const_dataclass`):
   the class promises the MDP / policy contract for its methods — the cost accumulator is
   `+=`/`-=`-only, `time_elapsed` is `+=`-only, no generator is used in
-  `modify_state_with_action`, generators are never re-bound or stored, `write_action_validity`
-  and `get_action` only read the state, a policy draws from `policy_rng` only and never reads
-  the cost. `@featurizer` promises that `write_features` only reads the state. The compiler
+  `modify_state_with_action`, the event step never draws from `policy_rng`, generators are
+  never re-bound or stored, `write_action_validity` and `get_action` only read the state, a
+  policy draws from `policy_rng` only and never reads the cost. Each rule also sees through
+  helpers: handing the state or a stream to a method that mutates or draws counts. `@featurizer` promises that `write_features` only reads the state. The compiler
   checks every promise whenever the methods compile; a violation is a compile error naming
   the model's line and explaining the rule. Undecorated classes are unchanged. See
   *Language reference → Promises*.

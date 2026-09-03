@@ -96,6 +96,25 @@ streams `Final[Generator]` — so you will see a compile error for that, not a
 promise failure; the promise adds the aliasing rule that `Final` cannot express.
 **Fix:** draw from the stream where you need it; never keep a reference.
 
+### event-stream-only
+
+*Method:* `modify_state_with_event`.
+*Rule:* `context.policy_rng` is not used — not directly, not through a
+sampler, not by handing it to a helper that draws.
+
+**Assumption.** The policy stream belongs to the policy. The event step draws
+from `context.rng` (or from a stream your own context adds, such as a separate
+lead-time stream); a randomized policy draws from `context.policy_rng`. Keeping
+the two apart is what makes the event sequence a function of the seed alone:
+swap the policy, or make it draw more often, and the demands, arrivals and
+failures stay the same. An event step that draws from the policy stream ties
+the events to how often the policy happened to draw.
+
+**Breaks it:** `context.policy_rng.random()`, `self.sampler.sample(context.policy_rng)`,
+`self.helper.draw(context.policy_rng)` inside the event step.
+**Fix:** use `context.rng`, or add a stream to your context for a second
+independent source.
+
 ### action-deterministic
 
 *Method:* `modify_state_with_action`.
