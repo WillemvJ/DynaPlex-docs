@@ -29,6 +29,11 @@ promise, the line and the rule, with a link back to its section here.
 - **By type where that matters.** Rules about random streams apply to *every*
   generator reachable from the context — `rng`, `policy_rng`, and any stream
   your own context class adds — not to a fixed list of names.
+- **Only the named fields are constrained.** Statistics fields you add to the
+  context (counters, per-type arrays, flags) and `Scratch` fields are yours:
+  read and write them in any role. The reserved names are matched as whole
+  fields, so a statistic called `cumulative_cost_by_type` is not mistaken for
+  `cumulative_cost`.
 - **Only when the method compiles.** A role method that no harness calls (a
   state-only policy never triggers `write_action_validity`) is not compiled
   and therefore not checked in that run. Plain CPython execution of the same
@@ -79,9 +84,12 @@ dynamics belong in the State (the airplane model keeps `remaining_days`).
 
 ### rng-bind-once
 
-*Methods:* `get_initial_state`, `modify_state_with_event`, `modify_state_with_action`.
+*Methods:* `get_initial_state`, `modify_state_with_event`, `modify_state_with_action`
+(and, under `@policy`, `get_action`).
 *Rule:* no generator under `context` is re-bound, re-seeded, or stored into a
 field or a container; the only thing a model does to a stream is draw from it.
+This covers every stream on the context — `rng`, `policy_rng`, and any stream
+your own context class adds.
 
 **Assumption.** The harness owns the identity of every random stream: it
 reseeds them in place per trajectory and, in DCL, recycles them across
@@ -151,7 +159,10 @@ query of the state that, if randomized, draws from its own stream and never
 looks at the harness's cost accounting.
 
 A policy also promises **state-read-only** for `get_action` — see
-[The state is read-only](#state-read-only).
+[The state is read-only](#state-read-only) — and **rng-bind-once** for its own
+stream: `reseed(context.policy_rng, ...)` inside `get_action` would restart the
+policy stream at every decision, and storing the generator keeps a handle the
+harness believes it has replaced (see [rng-bind-once](#rng-bind-once)).
 
 ### policy-stream-only
 

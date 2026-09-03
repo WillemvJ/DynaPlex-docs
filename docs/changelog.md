@@ -54,7 +54,8 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
   `+=`/`-=`-only, `time_elapsed` is `+=`-only, no generator is used in
   `modify_state_with_action`, the event step never draws from `policy_rng`, generators are
   never re-bound or stored, `write_action_validity` and `get_action` only read the state, a
-  policy draws from `policy_rng` only and never reads the cost. Each rule also sees through
+  policy draws from `policy_rng` only, never re-seeds or stores it, and never reads the cost.
+  Statistics and `Scratch` fields you add to the context are unconstrained in every role. Each rule also sees through
   helpers: handing the state or a stream to a method that mutates or draws counts. `@featurizer` promises that `write_features` only reads the state. The compiler
   checks every promise whenever the methods compile; a violation is a compile error naming
   the model's line and explaining the rule. Undecorated classes are unchanged. See
