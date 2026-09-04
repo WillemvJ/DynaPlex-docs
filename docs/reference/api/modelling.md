@@ -217,6 +217,10 @@ print(verdict.format())          # "ok (2 function(s) checked)" or the violation
 
 ::: dynaplex.fail
 
+## Compile-time requirements
+
+::: dynaplex.static_require
+
 ## Errors
 
 ::: dynaplex.DynaPlexError

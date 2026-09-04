@@ -4,6 +4,53 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 
 ## Unreleased (next: 1.14.0)
 
+### `dynaplex.static_require`: requirements settled at compile time
+
+- **`dynaplex.static_require(condition, "message")`** requires something of the
+  configuration being compiled. The condition must be a compile-time constant — a
+  literal, an expression over `Final[...]` fields of the engine root, or
+  `implements(obj, Protocol)`; a met requirement compiles to nothing, a failed one is
+  a compile error carrying the message and the line, and an undecidable one names the
+  field that made it unknown. It is never stripped, and it fires only where the
+  statement is actually compiled, so a method whose body is
+  `static_require(False, "...")` is the way to declare a method unavailable in a
+  configuration: it compiles until something calls it. In plain Python the call is an
+  always-on check raising `DynaPlexError`.
+
+### Weighted `rng.choice(p=...)` retired
+
+- **breaking** — the weighted form `rng.choice(xs, p=probs)` no longer compiles:
+  every draw rescanned and renormalized `probs`, and `DiscreteDist.custom(probs)`
+  with an `alias_sampler()` (constant time per draw) or `cdf_sampler()` is the
+  precomputed replacement. Passing `p=` is now a compile-time error naming that
+  replacement, and the plain-Python `dynaplex.Generator.choice` rejects `p=` the
+  same way. The unweighted forms `rng.choice(n)` and `rng.choice(xs)` are unchanged.
+  `dynaplex._core.HAS_WEIGHTED_CHOICE` reports whether a build carries the weighted
+  kernels (`False` on released wheels).
+
+### Documentation
+
+- New [Discrete distributions](reference/discrete-distributions.md) page: a high-level
+  inventory of `DiscreteDist` — supported families and the two-moment fit, inspection,
+  convolution and mixing, the three ways to draw, exact enumeration, and the tail
+  truncation that makes it unsuitable for rare-event probabilities.
+
+### Faster one-shot draws with per-draw parameters
+
+- **`DiscreteDist.adan_eenige_resing_sample`, `binomial_sample`, `negative_binomial_sample`,
+  `poisson_sample`, `geometric_sample`** draw by inversion on the family's PMF recurrence
+  instead of constructing a C++ standard-library sampler per call. For forecast-driven
+  (non-stationary) demand, where the parameters change every period, the binomial
+  component of the two-moment fit is about twice as fast per draw and the geometric
+  component about three times; the non-stationary stochastic lot-sizing benchmark runs
+  about 50 % more periods per second. For large means the draws are numpy's own
+  rejection samplers (PTRS, BTPE, gamma-Poisson), ported exactly: on a numpy
+  `Generator` they reproduce `Generator.poisson` / `binomial` / `negative_binomial`
+  draw for draw, and a binomial draw at a mean of ten thousand went from about
+  180 ns to under 40. Draws remain exact (verified against the materialized
+  distributions) and reproducible per machine; the **draw sequence changes**, so
+  seeded results that go through these samplers differ from 1.13.
+
 ### Runtime checks: `assert` follows Python, `dynaplex.fail`, fast mode and rehearsal
 
 - **`assert` is a check, as in Python.** Compiled code now runs in one of two modes:
@@ -24,6 +71,19 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
   the environment (rerun a misbehaving script fully checked, no code change).
 - **`dynaplex.rehearse(mdp, policy, features=..., trajectories=...)`** — the checked pass
   as a standalone model checker, plus a bytewise CPython-vs-compiled parity comparison.
+- **`dynaplex.check_mdp(mdp, policy=None, seeds=64, periods=128)`** — the model check
+  that runs before any compile: plain Python, seeded trajectories under the policy
+  (default: a random policy over the valid actions), and a failure names the method
+  and the bug — a state category that never changes, an infinite-horizon model that
+  never advances `time_elapsed` or reaches `FINAL`, a validity mask with unwritten
+  entries or no valid action, a policy choosing an invalid action, a model that keeps
+  state outside the `State` object (two runs of the same seed diverge), and a model
+  whose every decision state has exactly one valid action — the case that used to
+  stall DCL silently before its first round. With `features=` it also featurizes
+  every decision state of the first trajectory and fails on a NaN or infinite
+  feature value. Returns the counts (events, decisions, valid actions per decision,
+  feature rows) when it passes. Opt-outs: `relax_program_flow`,
+  `skip_no_decisions_check`. Run it first, `rehearse` second.
 - The algorithms' own invariants (root-pool exhaustion, `max_steps`, an infinite-horizon
   MDP reaching FINAL, a state with no valid action) now use `dynaplex.fail` and fire in
   every mode.

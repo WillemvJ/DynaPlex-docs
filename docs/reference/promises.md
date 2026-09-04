@@ -44,6 +44,23 @@ promise, the line and the rule, with a link back to its section here.
 
 An undecorated class carries no promises; nothing is checked for it.
 
+### Checking the model dynamically
+
+Promises are rules over what a method *may do*; they cannot see what a model
+*does* over a trajectory. `dynaplex.check_mdp(mdp, policy=None)` covers that
+side in plain Python, before anything compiles: it runs seeded trajectories
+under the policy (by default a random policy over the valid actions) and fails
+with a hint naming the method when the state category never changes, an
+infinite-horizon model never advances `time_elapsed` or reaches `FINAL`, the
+validity mask is left partly unwritten or marks no action valid, the policy
+picks an invalid action, two runs of the same seed diverge (state kept outside
+the `State` object), or every decision state offers exactly one valid action —
+the model would then stall DCL before its first round. With `features=` it
+also featurizes every decision state of the first trajectory and fails on a
+NaN or infinite feature value. Run it first, then
+[`rehearse`][dynaplex.rehearse] for the checked compiled pass. Reference:
+[`check_mdp`][dynaplex.check_mdp].
+
 ## MDP
 
 What we expect from every MDP class (`@mdp` above `@const_dataclass`): its

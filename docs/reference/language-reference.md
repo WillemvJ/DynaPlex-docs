@@ -587,6 +587,26 @@ def get_action(self, state: State) -> int:
     dynaplex.fail("no feasible action")     # NoReturn: the method ends here
 ```
 
+A third form is decided before anything runs: **`dynaplex.static_require(condition,
+"message")`** requires something of the *configuration* being compiled. The
+condition must be a compile-time constant — a literal, an expression over
+`Final[...]` fields of the engine root (an MDP parameter, an enum such as
+`horizon_type`), or `implements(obj, Protocol)` — and the compiler settles it
+while compiling the method: when it holds, nothing is emitted; when it fails,
+compilation stops with the message and the line; when it cannot be decided,
+compilation stops saying which field made it unknown. It is never stripped.
+Because it fires only where the statement is actually compiled, a method whose
+body is `static_require(False, "...")` compiles fine until something calls it,
+which makes it the way to say "this method is not available in this
+configuration". In plain Python the same call is an always-on check that
+raises `DynaPlexError`:
+
+```python
+def modify_state_with_action(self, state: State, context: Ctx, action: int) -> None:
+    static_require(self.horizon_type == HorizonType.FINITE, "this model is finite-horizon only")
+    ...
+```
+
 `__debug__` is the compile-time checks flag (`True` checked, `False` fast),
 as in CPython. `if __debug__:` compiles only the taken branch, so an
 expensive invariant walk costs nothing in fast mode:
@@ -926,10 +946,9 @@ Methods on both families:
       `0, ..., n-1`;
     - `rng.choice(xs)` with a list or 1-D array: a uniform draw of an
       element;
-    - either form with weights: `rng.choice(xs, p=probs)`, where `probs` is
-      a `list[float]` or 1-D float array summing to one.
     - The NumPy-only keyword arguments `size=`, `replace=`, `axis=`, and
-      `shuffle=` are not supported.
+      `shuffle=` are not supported, and neither is the weighted form
+      `p=probs` (see the note below).
 
 !!! note "Reproducibility"
     For the NumPy family, `rng.random()` and `rng.uniform()` reproduce
@@ -937,12 +956,13 @@ Methods on both families:
     different integer-sampling algorithm than NumPy and will generally
     return a different (equally uniform) stream for the same seed. 
 
-!!! warning "Weights must sum to one"
-    Compiled DynaPlex execution normalizes any positive weights, but NumPy
-    itself rejects a `p` that does not sum to one (within ~1.5e-8). A
-    NumPy-family model that relies on normalization therefore runs compiled
-    but raises in plain CPython. Do not rely on the normalization: keep
-    weights summing to one, as NumPy requires.
+!!! note "Weighted draws"
+    `rng.choice(xs, p=probs)` is not available in released DynaPlex: it
+    rescanned and renormalized `probs` on every draw. Weighted draws go
+    through a [discrete distribution](discrete-distributions.md) built
+    once, `DiscreteDist.custom(probs)`, and sampled through its
+    `alias_sampler()` (constant time per draw) or `cdf_sampler()`. Passing
+    `p=` is a compile-time error that names this replacement.
 
 ### DynaPlex built-ins
 
@@ -954,12 +974,22 @@ Constant (`@const_dataclass`) parts are shared rather than copied.
 in every mode (checked, fast and CPython) and never returns. `msg` follows the
 assert-message rules. See [Assertions](#assertions-__debug__-and-dynaplexfail).
 
+**`dynaplex.static_require(condition, msg)`** — a requirement settled at
+compile time: `condition` must be a compile-time constant (`Final` fields of
+the engine root, literals, `implements(...)`); a failed requirement is a
+compile error carrying `msg`, a met one emits nothing. In plain Python an
+always-on check raising `DynaPlexError(msg)`. See
+[Assertions](#assertions-__debug__-and-dynaplexfail).
+
 ### Distributions and samplers
 
 The modelling toolkit provides `DiscreteDist` — an explicit distribution
 over a finite range of integers — together with two O(1) samplers. These
 are ordinary DynaPlex classes: construct them in your MDP's `__init__`,
 store them in (const) fields, and call their methods from compiled code.
+A high-level tour of what they can do is on the
+[Discrete distributions](discrete-distributions.md) page; this section
+lists the compilable surface.
 
 - Factories: `DiscreteDist.constant(v)`, `DiscreteDist.custom(probs,
   offset=0)`, `DiscreteDist.poisson(mean)`, `DiscreteDist.geometric(mean)`,
@@ -974,7 +1004,9 @@ store them in (const) fields, and call their methods from compiled code.
   `fractile(alpha)`.
 - One-shot draws without building a distribution:
   `DiscreteDist.poisson_sample(mean, rng)` and the analogous
-  `*_sample` classmethods.
+  `*_sample` classmethods — a few tens of nanoseconds per draw for the
+  small means typical of per-period demand, with no per-parameter setup, so
+  the parameters may change every draw.
 - **Whenever the distribution is static** (the same for every state — the
   usual case), build a sampler once in the MDP's `__init__` —
   `dist.alias_sampler()` — and draw with `sampler.sample(rng)`: O(1) per

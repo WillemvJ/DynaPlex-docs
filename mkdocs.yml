@@ -91,6 +91,7 @@ nav:
       - Custom trajectory statistics: advanced/airplane-statistics.md
   - Language reference:
       - Language reference: reference/language-reference.md
+      - Discrete distributions: reference/discrete-distributions.md
       - Troubleshooting compile errors: reference/troubleshooting.md
       - Promises (model validation): reference/promises.md
   - API reference:

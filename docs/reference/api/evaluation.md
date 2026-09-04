@@ -11,6 +11,18 @@ package.
 
 ::: dynaplex.Comparison
 
+## Model check
+
+Runs the MDP under a policy in plain Python — no compile — and fails with a
+hint naming the method when the decision structure is degenerate (a category
+that never changes, time that never advances, an unwritten validity mask, no
+real choice at any decision, hidden state outside the `State` object). Run it
+before `rehearse`. See *Promises → Checking the model dynamically*.
+
+::: dynaplex.check_mdp
+
+::: dynaplex.MdpCheckReport
+
 ## Rehearsal
 
 The model checker: the checked pass every algorithm runs by default
