@@ -20,6 +20,7 @@ SOURCES = {
     "airplane_statistics_example.py": "examples/airplane_statistics_example.py",
     "binpacking.py": "models/binpacking.py",
     "binpacking_dcl.py": "examples/binpacking_dcl.py",
+    "tianshou_dqn_example.py": "examples/tianshou_dqn_example.py",
 }
 
 
