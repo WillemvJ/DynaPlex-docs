@@ -31,6 +31,10 @@ Every public name in the API, with the page where it is documented.
 | [`Dtype`][dynaplex.modelling.Dtype] | `dynaplex.modelling` | [Training policies](training.md) |
 | [`DynaPlexError`][dynaplex.DynaPlexError] | `dynaplex` | [Modelling MDPs](modelling.md) |
 | [`Engine`][dynaplex.runtime.Engine] | `dynaplex.runtime` | [Advanced runtime](runtime.md) |
+| [`ExactPolicy`][dynaplex.ExactPolicy] | `dynaplex` | [Exact solver](exact-solver.md) |
+| [`ExactResult`][dynaplex.ExactResult] | `dynaplex` | [Exact solver](exact-solver.md) |
+| [`ExactSolver`][dynaplex.ExactSolver] | `dynaplex` | [Exact solver](exact-solver.md) |
+| [`ExactTablePolicy`][dynaplex.ExactTablePolicy] | `dynaplex` | [Exact solver](exact-solver.md) |
 | [`fail`][dynaplex.fail] | `dynaplex` | [Modelling MDPs](modelling.md) |
 | [`feature_spec`][dynaplex.modelling.feature_spec] | `dynaplex.modelling` | [Training policies](training.md) |
 | [`featurizer`][dynaplex.featurizer] | `dynaplex` | [Training policies](training.md) |

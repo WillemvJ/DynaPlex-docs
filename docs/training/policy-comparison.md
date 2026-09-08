@@ -36,6 +36,12 @@ Use `comparer.assess(policy)` for a single policy; `compare(...)` accepts
 positional policies, a list, or a dict (dict keys become the result names),
 and `benchmark=` selects the benchmark by index or name.
 
+!!! tip "Small finite MDPs can be solved exactly"
+    For a model whose reachable state space fits in memory, the
+    [exact solver](exact-solver.md) computes a policy's average cost without
+    simulation noise and finds the optimal policy; that policy is a normal
+    policy and can be compared here alongside heuristics and trained agents.
+
 ## What the numbers mean
 
 The metric is always the MDP's **native cost** (lower is better):

@@ -4,6 +4,22 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 
 ## Unreleased (next: 1.14.0)
 
+### Exact solver
+
+- **`dynaplex.ExactSolver`**: exact policy evaluation and optimization of a finite-state,
+  infinite-horizon MDP. Construction discovers every decision state reachable under the
+  model's own dynamics, running the model's transition methods compiled in the engine with
+  each random draw enumerated instead of sampled; `evaluate(policy)` then computes a
+  compiled policy's exact average cost per period and `solve(warm_start=None)` the optimal
+  policy by modified policy iteration. The result carries the cost, the bias (relative
+  value) and action tables, `get_bias_function()` and `get_policy()`; the latter is a
+  normal compiled policy (`ExactPolicy`, or `ExactTablePolicy` when the state space has
+  several shapes) that runs in the comparer and as a DCL generation-0 policy. Models need
+  discrete, enumerable events (the `DISCRETE_IDENTIFIABLE_EVENTS` promises) and an
+  integer-valued state; guardrails `max_states` and `max_event_branches` bound discovery.
+  Single-threaded and in memory in this version. See *Training and evaluation → Exact
+  solver*.
+
 ### `dynaplex.static_require`: requirements settled at compile time
 
 - **`dynaplex.static_require(condition, "message")`** requires something of the
@@ -123,7 +139,7 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 - **`@mdp(promises=...)`** appends an algorithm's set; `dynaplex.validation` holds the
   vocabulary (`Param`/`Path`/`OfType` selectors, `NoUse`/`ReadOnly`/`Accumulate`/`BindOnce`/
   `SingleCall` constraints, `RoleContract`), `validate(engine, contract)` for a non-raising
-  verdict, and `DISCRETE_IDENTIFIABLE_EVENTS`, the set the upcoming exact solver requires.
+  verdict, and `DISCRETE_IDENTIFIABLE_EVENTS`, the set the exact solver requires.
 - The shipped models (`dynaplex.models`) and the examples now carry `@mdp` / `@policy`.
 - **breaking** — `PolicyComparer(backend=...)` and `gym.VectorEnv(backend=...)` default to
   `"engine"`: a model that fails to compile, or violates a promise, raises instead of
