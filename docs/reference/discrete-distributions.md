@@ -22,8 +22,8 @@ demand.expectation(), demand.fractile(0.95)  # 3.2, 6
 
 lead_time_demand = demand.add(demand).add(demand)   # convolution: 3 periods
 
-sampler = demand.alias_sampler()             # build once ...
-x = sampler.sample(rng)                      # ... O(1) per draw
+sampler = demand.alias_sampler()             # build once, e.g. in the MDP's __init__ ...
+x = sampler.sample(rng)                      # ... then draw very fast, every period
 ```
 
 ## Runs in plain Python and in compiled code
@@ -124,10 +124,8 @@ self.demand_sampler = self.demand.alias_sampler()   # in __init__
 x = self.demand_sampler.sample(context.rng)         # in the event step
 ```
 
-`alias_sampler()` gives O(1) draws (two uniforms per draw). `cdf_sampler()`
-gives O(log n) draws with one uniform per draw and the property that larger
-uniforms map to larger outcomes, which matters when you rely on common random
-numbers across policies.
+`alias_sampler()` gives the fastest draws: a constant cost per draw, however
+wide the support, at two uniforms per draw.
 
 **A distribution that depends on the state.** If the distribution object
 itself is chosen per state — say from a list indexed by the current regime —
@@ -161,9 +159,9 @@ or NumPy's `Generator`. See
 ## Exact enumeration
 
 Because a `DiscreteDist` is an explicit PMF, DynaPlex can *enumerate* it
-rather than sample it. When an MDP's event step is a single draw from a
-`DiscreteDist` (or a sampler built from one) stored on the model, the
-distribution of the event is known statically, and the model satisfies the
+rather than sample it. When an MDP's event step consists of draws from `DiscreteDist`s (or
+samplers built from those) stored on the model, the distribution of the event
+is known statically, and the model satisfies the
 [discrete identifiable events](promises.md#discrete-identifiable-events)
 promises that exact enumeration of the event step requires. This is one
 more reason to express randomness through `DiscreteDist` instead of ad-hoc

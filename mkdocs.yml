@@ -51,7 +51,7 @@ plugins:
             # Phase-1 local build: griffe reads the staged package tree
             # (includes the _core .pyi stubs). At go-public the docs CI
             # installs the dynaplex wheel instead and this entry goes away.
-            - ../DynaPlex/build/Release/python
+            - ../DynaPlex-feat3/build/Release/python
           options:
             docstring_style: google
             # Stubs are authoritative: never fall back to importing/inspecting

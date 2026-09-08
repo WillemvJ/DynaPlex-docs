@@ -2,13 +2,14 @@
 ![DynaPlex logo](assets/images/logo.png){ width="420" }
 </div>
 
-DynaPlex is an optimization library for solving Markov Decision Processes and
-related sequential decision making problems (POMDP, HMM). 
+DynaPlex is an optimization library for formulating and solving Markov Decision
+Processes, i.e. for identifying well-performing policies that select actions
+based on complete or partial observations of the state space.
 
 The DynaPlex design enables clean modelling and efficient solving of problems arising in operations management (OM) and related fields, e.g. in supply chain management, transportation, manufacturing, warehousing, maintenance optimization, process optimization, etc. Models are written in
 **DynaML**: a purpose-built modelling language whose syntax is canonical Python, extended with modelling primitives such as discrete distributions. Models are executed by a multi-threaded engine with a bundled LLVM JIT, allowing the user to read and write canonical Python code, and get auto-vectorized C++ speed. 
 
-Just as importantly, the library bundles algorithms such as [Deep Controlled Learning (DCL)](training/dcl.md), specifically designed for the highly stochastic problems that arise in typical OM applications, as well as canonical implementations of DRL algorithms such as [Proximal Policy Optimization (PPO)](training/ppo.md), which benefit from accelerated training due to the compiled vectorized environments. There is also first-class support for [comparing](training/policy-comparison.md) and optimizing classical parameterized policies, as well as [exact algorithms](training/exact-solver.md) for models whose state space can be enumerated. 
+Just as importantly, the library bundles algorithms such as [Deep Controlled Learning (DCL)](training/dcl.md), specifically designed for the highly stochastic problems that arise in typical OM applications, as well as canonical implementations of DRL algorithms such as [Proximal Policy Optimization (PPO)](training/ppo.md), which benefit from accelerated training due to the compiled vectorized environments. There is also first-class support for [comparing](training/policy-comparison.md) and optimizing classical parameterized policies, as well as [exact algorithms](training/exact-solver.md) for models whose state space can be enumerated.
 
 ```bash
 pip install dynaplex

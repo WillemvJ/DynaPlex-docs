@@ -1,9 +1,5 @@
 # Airplane MDP with custom statistics
 
-!!! note "Version"
-    Trajectory-context statistics ship in the release after 1.12.3; the code
-    on this page does not run on older wheels.
-
 The [airplane tutorial](../tutorials/airplane-mdp.md) evaluates policies on a single
 number: the total cost (negative revenue) per trajectory. Real studies want
 more. For the airline, natural questions are:

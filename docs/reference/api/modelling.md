@@ -191,13 +191,8 @@ the short form: [language reference → Promises](../language-reference.md#promi
 - `dynaplex.policy` — the same for a policy's `get_action`
   (`BASE_POLICY_CONTRACT`). `@featurizer` attaches `FEATURIZER_CONTRACT`
   (`write_features` only reads the state) by itself.
-- `dynaplex.validation` — the vocabulary: selectors `Param(name)`,
-  `Path(name, "a.b")`, `OfType(name, Generator)` (combine with `-` to exclude
-  a path); constraints `NoUse()`, `ReadOnly()`, `Accumulate(ops)`,
-  `BindOnce()`, `SingleCall(callees, at="entry")`; `Promise(selector,
-  constraint, message)`; `RoleContract({method: [promises]})`, addable with
-  `+`; `validate(engine_or_program, contract, cls=...)` returning a `Verdict`
-  (`ok`, `violations`, `format()`, `raise_if_any()`); and
+- `dynaplex.validation` — `validate(engine_or_program, contract, cls=...)`
+  returning a `Verdict` (`ok`, `violations`, `format()`, `raise_if_any()`), and
   `DISCRETE_IDENTIFIABLE_EVENTS`, the set the exact solver requires.
 
 ```python
