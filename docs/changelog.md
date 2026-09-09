@@ -134,6 +134,14 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
   consistent with `equals`, so such fields no longer need the opt-out. Plain `==`
   is unchanged and still refuses array fields, to align with CPython semantics.
 
+### `@classmethod` and `@staticmethod` on dataclasses
+
+- **`@classmethod` and `@staticmethod`** now compile on dataclasses, called on the
+  class: `Point.origin()`, `Point.manhattan(a, b)`. Inside a classmethod `cls(...)`
+  builds an instance and `cls.other(...)` calls another classmethod, so factory
+  methods work as in Python. Calling either through an instance is not supported;
+  use the class name. See *Language reference → Method signatures*.
+
 ### Weighted `rng.choice(p=...)` retired
 
 - **breaking** — the weighted form `rng.choice(xs, p=probs)` no longer compiles:
