@@ -38,9 +38,11 @@ and `benchmark=` selects the benchmark by index or name.
 
 !!! tip "Small finite MDPs can be solved exactly"
     For a model whose reachable state space fits in memory, the
-    [exact solver](exact-solver.md) computes a policy's average cost without
-    simulation noise and finds the optimal policy; that policy is a normal
-    policy and can be compared here alongside heuristics and trained agents.
+    [exact solver](exact-solver.md) computes a policy's cost — average per
+    period on an infinite horizon, expected total per episode on a finite one
+    — without simulation noise and finds the optimal policy; that policy is a
+    normal policy and can be compared here alongside heuristics and trained
+    agents.
 
 ## What the numbers mean
 

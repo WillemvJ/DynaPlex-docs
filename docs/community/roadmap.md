@@ -11,12 +11,10 @@ prioritize.
 ## Exact solvers
 
 The [exact solver](../training/exact-solver.md) is available for
-infinite-horizon MDPs (average cost): discovery of the reachable state space,
-exact policy evaluation and policy iteration, single-threaded and in memory.
-Planned on top of it:
+infinite-horizon MDPs (average cost) and finite-horizon MDPs (expected total
+cost): discovery of the reachable state space, exact policy evaluation and
+policy iteration, single-threaded and in memory. Planned on top of it:
 
-- **Finite-horizon MDPs** (expected total cost, a value function instead of a
-  bias function).
 - **Parallel sweeps** over the state space, the `workers` knob the other
   harnesses already have.
 - **Persistence**: writing the discovery and the solved tables to a work

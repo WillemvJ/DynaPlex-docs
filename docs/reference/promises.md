@@ -129,9 +129,9 @@ promise failure; the promise adds the aliasing rule that `Final` cannot express.
 *Methods:* `get_initial_state`, `modify_state_with_event`.
 *Rule:* `context.policy_rng` is not used — not directly, not through a
 sampler, not by handing it to a helper that draws. (`get_initial_state` *may*
-draw from `context.rng`: a random start is fine under this contract; only the
-exact solver's [deterministic-initial-state](#deterministic-initial-state)
-forbids it.)
+draw from `context.rng`: a random start is fine under this contract, and the
+exact solver's [discrete-initial-draws-only](#discrete-initial-draws-only)
+only asks that those draws be discrete.)
 
 **Assumption.** The policy stream belongs to the policy. The event step draws
 from `context.rng` (or from a stream your own context adds, such as a separate
@@ -291,13 +291,22 @@ the solver can list — a continuous draw has none.
 families, `DiscreteDist.custom`, or `rng.choice`); draw in the event method
 and pass the value to helpers.
 
-### deterministic-initial-state
+### discrete-initial-draws-only
 
 *Method:* `get_initial_state`.
-*Rule:* no generator under `context` is used.
+*Rule:* the same as [discrete-draws-only](#discrete-draws-only), on the
+initial state: every draw from a generator under `context` goes through a
+discrete distribution or `rng.choice(n)`, and the generator is handed to no
+helper.
 
-**Assumption.** Enumeration starts from one state. Random initial states would
-need a distribution over roots; not supported.
+**Assumption.** The solver enumerates the initial distribution the way it
+enumerates events: every discrete outcome of `get_initial_state`, advanced
+through events to the first decision. Under a finite horizon that distribution
+weighs the expected total cost; under an infinite horizon the average cost
+does not depend on the start, but the start states still seed discovery.
+
+**Fix:** as for discrete-draws-only — express the randomness as a discrete
+distribution and draw from it in `get_initial_state`.
 
 ## Reading a validation failure
 

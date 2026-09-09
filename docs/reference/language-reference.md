@@ -1255,9 +1255,10 @@ context.rng is used (load) — breaks the MDP promise 'action-deterministic' (No
 ### An algorithm's promises
 
 Some algorithms need more than the base contract. The exact solver, for
-instance, enumerates the draws of `modify_state_with_event` and
-needs every one of them to be discrete (a library sampler, a one-shot family
-draw, or `rng.choice`), never `rng.random()` or `rng.uniform()`. Such a set is a `RoleContract`
+instance, enumerates the draws of `modify_state_with_event` and of
+`get_initial_state` and needs every one of them to be discrete (a library
+sampler, a one-shot family draw, or `rng.choice`), never `rng.random()` or
+`rng.uniform()`. Such a set is a `RoleContract`
 (here `dynaplex.validation.DISCRETE_IDENTIFIABLE_EVENTS`). An algorithm checks it when it
 is constructed; a model author who wants the check at compile time declares
 it up front:

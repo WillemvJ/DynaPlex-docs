@@ -47,6 +47,20 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
   untuned shape; pass `machine=None` to use the explicit knobs as before. Every plan is
   verified against the allocation before a collection starts. See *Training and
   evaluation → Machines and execution plans*.
+- **Two shapes per plan, `dynaplex.Shape`.** Generation 0 rolls out the heuristic
+  in-machine and has no network forward to place, so every plan carries a separate
+  generation-0 shape — one engine per process, workers filling the cores, 512 slots — next
+  to the trained policy's shape (two engines to drive an accelerator, cores reserved for
+  torch threads on the cpu). Measured on Snellius: about 10 % faster generation-0
+  collection on the Genoa and H100 units than the trained shape gives, and one thread per
+  process too many halves it. `DCL(gen0=, trained=)` overlay the plan's shapes field by
+  field with a `dynaplex.Shape(processes, engines, workers, slots)`: `Shape(workers=8)`
+  changes the workers only; without a plan the base is 1 × 1 × 1 × 512. Both shapes are
+  part of the experiment identity (`params.gen0` / `params.trained` in `dcl.json`). The
+  generation-0 run header says that the rollout policy runs in-machine and the device is
+  unused. **Breaking:** the explicit `controllers`, `workers`, `slots` arguments of
+  `DCL(...)` are gone; pass `gen0=dp.Shape(...)` / `trained=dp.Shape(...)` instead
+  (`collect_samples` keeps its scalar arguments).
 - **`dynaplex.machine`**: hardware-vs-allocation detection (affinity mask, cgroup limits,
   visible GPUs, SLURM variables); `python -m dynaplex.machine` prints it.
 - The CPU plan `genoa` is 32 processes of one engine with 4 workers each, 512 slots per
@@ -65,19 +79,31 @@ Changes per release, newest first. Breaking changes are marked **breaking**.
 
 ### Exact solver
 
-- **`dynaplex.ExactSolver`**: exact policy evaluation and optimization of a finite-state,
-  infinite-horizon MDP. Construction discovers every decision state reachable under the
-  model's own dynamics, running the model's transition methods compiled in the engine with
-  each random draw enumerated instead of sampled; `evaluate(policy)` then computes a
-  compiled policy's exact average cost per period and `solve(warm_start=None)` the optimal
-  policy by modified policy iteration. The result carries the cost, the bias (relative
-  value) and action tables, `get_bias_function()` and `get_policy()`; the latter is a
-  normal compiled policy (`ExactPolicy`, or `ExactTablePolicy` when the state space has
-  several shapes) that runs in the comparer and as a DCL generation-0 policy. Models need
-  discrete, enumerable events (the `DISCRETE_IDENTIFIABLE_EVENTS` promises) and an
+- **`dynaplex.ExactSolver`**: exact policy evaluation and optimization of a finite-state
+  MDP. Construction discovers every decision state reachable under the model's own
+  dynamics, running the model's transition methods compiled in the engine with each random
+  draw enumerated instead of sampled; `evaluate(policy)` then computes a compiled policy's
+  exact cost and `solve(warm_start=None)` the optimal policy by modified policy iteration.
+  The result carries the cost, the value and action tables and `get_policy()`; the latter
+  is a normal compiled policy (`ExactPolicy`, or `ExactTablePolicy` when the state space
+  has several shapes) that runs in the comparer and as a DCL generation-0 policy. Models
+  need discrete, enumerable events (the `DISCRETE_IDENTIFIABLE_EVENTS` promises) and an
   integer-valued state; guardrails `max_states` and `max_event_branches` bound discovery.
   Single-threaded and in memory in this version. See *Training and evaluation → Exact
   solver*.
+- **Both horizons.** On an infinite-horizon MDP the cost is the long-run average cost per
+  period and `res.values` the bias (`get_bias_function()`). On a finite-horizon MDP it is
+  the expected total cost of an episode, from `get_initial_state` until the state becomes
+  `FINAL`, and `res.values` the expected cost-to-go (`get_value_function()`);
+  `res.stats["horizon"]` says which. Both forms of ending are covered — an internal clock
+  such as the airplane's `remaining_days`, and stopping problems where reaching `FINAL`
+  depends on the action — under the assumption, not checked, that every policy reaches
+  `FINAL` with probability one (a model that does not shows as non-convergence). The
+  initial distribution is enumerated like the events, so `get_initial_state` may draw
+  discretely: the promise `discrete-initial-draws-only` replaces the deterministic-start
+  rule. Finite-horizon sweeps update values in place and can follow an order the model
+  supplies (an optional `sweep_rank(self, state) -> int`; the airplane model returns
+  `remaining_days`, which makes the solve a single backward-induction pass).
 
 ### Bitwise and shift operators; `//` and `%` floor like Python
 

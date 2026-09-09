@@ -44,11 +44,14 @@ agents = d.run(generations=2)         # agent_gen1, agent_gen2 — both NNAgents
     for you. When detection finds an allocation no plan covers it says so,
     rather than run on an untuned shape and look slow. You always see what was
     chosen: each collection pass starts by printing the plan (processes,
-    engines, workers, slots, the device the agent runs on, and why that plan was
-    derived) and the machine it was verified against, and
+    engines, workers, slots for that generation, the device the trained policy
+    runs on, and why that plan was derived) and the machine it was verified
+    against, and
     `python -m dynaplex.machine` shows the same detection without running
-    anything. The explicit knobs (`controllers`, `workers`, `slots`, `device`)
-    remain for experiments on the plans themselves. The plan table, what is
+    anything. For experiments on the plans themselves, `gen0=` and `trained=`
+    take a `dp.Shape` (processes, engines, workers, slots) that overlays the
+    plan's shape for generation 0 and for the trained policy respectively, and
+    `device=` moves the trained policy. The plan table, what is
     detected, and the SLURM lines for the cluster units are on
     [Machines and execution plans](machines.md).
 

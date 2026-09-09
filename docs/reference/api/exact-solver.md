@@ -1,7 +1,9 @@
 # Exact solver
 
-Exact policy evaluation and optimization of a finite-state, infinite-horizon
-MDP — see the [exact solver guide](../../training/exact-solver.md) for usage.
+Exact policy evaluation and optimization of a finite-state MDP — the average
+cost per period under an infinite horizon, the expected total cost under a
+finite one — see the [exact solver guide](../../training/exact-solver.md) for
+usage.
 Everything on this page is imported from the top-level `dynaplex` package.
 
 ::: dynaplex.ExactSolver

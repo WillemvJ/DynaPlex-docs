@@ -2,8 +2,10 @@
 
 `ExactSolver` is DynaPlex's exact method for **finite-state MDPs**. It
 enumerates every decision state reachable under the model's own dynamics,
-computes the **exact** long-run average cost of any compiled policy, and finds
-the **optimal** policy by policy iteration. Where the
+computes the **exact** cost of any compiled policy — the long-run average cost
+per period of an infinite-horizon model, the expected total cost of an episode
+of a finite-horizon one — and finds the **optimal** policy by policy
+iteration. Where the
 [`PolicyComparer`](policy-comparison.md) estimates a cost from simulated
 trajectories, the solver computes it to a chosen tolerance and, for the
 optimum, tells you how much room any heuristic or trained agent leaves on the
@@ -57,19 +59,29 @@ evaluating several policies on one solver costs one discovery. Call
 
 ## What the numbers mean
 
-The metric is the MDP's **native cost per unit time** — the same number the
-comparer estimates for an infinite-horizon MDP — computed exactly:
+The metric is the MDP's **native cost** — the same number the comparer
+estimates — computed exactly. Which number depends on the model's
+`horizon_type`:
 
-- `res.cost` is the long-run **average cost per period**, converged until the
-  span of the value increments is below `epsilon` (default `1e-6`).
-- `res.values` is the **bias** (relative value) per state and `res.actions`
-  the action per state, both indexed by the solver's global state index.
-  `res.get_bias_function()` wraps the values as a callable `state -> float`
-  for plain Python states (the best state has bias 0; a larger bias means a
-  worse state to be in).
-- `res.stats` carries `states`, `transitions`, `leaves` (the enumerated
-  successors), `sweeps`, `improvements`, the final `span`, `seconds` and
-  `discovery_seconds`. `print(res)` is the one-line summary shown above.
+- **Infinite horizon** (`HorizonType.INFINITE`): `res.cost` is the long-run
+  **average cost per period**, converged until the span of the value
+  increments is below `epsilon` (default `1e-6`). `res.values` is the **bias**
+  (relative value) per state; `res.get_bias_function()` wraps it as a callable
+  `state -> float` for plain Python states (the best state has bias 0; a
+  larger bias means a worse state to be in).
+- **Finite horizon** (`HorizonType.FINITE`): `res.cost` is the **expected
+  total cost** of an episode, from `get_initial_state` until the state becomes
+  `FINAL`, converged until the largest value increment is below `epsilon`.
+  `res.values` is the **expected cost-to-go** per decision state;
+  `res.get_value_function()` wraps it as `state -> float`. The initial
+  distribution is enumerated like the events: every discrete outcome of
+  `get_initial_state`, advanced through events to the first decision, with
+  the cost accrued on the way.
+- `res.actions` is the action per state, indexed like `res.values` by the
+  solver's global state index. `res.stats` carries `states`, `transitions`,
+  `leaves` (the enumerated successors), `horizon`, `sweeps`, `improvements`,
+  the final `span`, `seconds` and `discovery_seconds`. `print(res)` is the
+  one-line summary shown above.
 
 `evaluate(policy)` runs policy evaluation only: `improvements` is 0 and the
 cost is that policy's. `solve()` alternates evaluation sweeps and policy
@@ -78,19 +90,72 @@ until no state changes its action. `solve(warm_start=policy)` starts from a
 policy's actions instead of the lowest valid action in every state; a good
 warm start saves improvement rounds but does not change the optimum.
 
+## A finite-horizon model: the airplane
+
+The [airplane MDP](../tutorials/airplane-mdp.md) sells the seats of one flight
+over a fixed number of days and ends when the days run out — a finite horizon.
+The solver then reports the **expected total cost** of an episode (here the
+negative revenue), from the initial state to the `FINAL` state, on the
+tutorial's instance: 25 days, 10 seats, customers paying 3000, 2000 or 1000
+with probabilities 0.4, 0.3 and 0.3.
+
+```python
+import dynaplex as dp
+from dynaplex.models.airplane import AirplaneMDP, SimplePolicy
+
+mdp = AirplaneMDP(initial_days=25, initial_seats=10,
+                  prices_per_customer_type=[3000, 2000, 1000],
+                  customer_type_probs=[0.4, 0.3, 0.3])
+rule = SimplePolicy(mdp=mdp)
+
+solver = dp.ExactSolver(mdp)
+print("rule-based:", solver.evaluate(rule))
+opt = solver.solve(warm_start=rule)
+print("optimal:   ", opt)
+```
+
+```text
+rule-based: expected total cost -25074.7  (660 states, 2 sweeps, 0 improvements, span 0.0e+00, 0.69 s)
+optimal:    expected total cost -28769.2  (660 states, 4 sweeps, 2 improvements, span 0.0e+00, 0.68 s)
+```
+
+The rule-based policy earns 25 075 in expectation, the optimal policy 28 769 —
+about 15% more, exactly, where the tutorial's `PolicyComparer` run puts the
+same two policies at 25 124 ± 64 and 28 714 ± 54. Finite-horizon models need
+no clock: a *stopping problem*, where reaching `FINAL` depends on the action
+and states can repeat, is solved the same way, iterating to `epsilon`.
+
+??? note "Sweep order"
+    Finite-horizon sweeps update each state's value in place and, when the
+    model defines an optional `sweep_rank(self, state) -> int`, visit states in
+    ascending rank. The library's airplane model returns `remaining_days`, so
+    the last day is swept first and the solve above is one backward-induction
+    pass plus a confirmation — hence the low sweep counts. Without the method
+    the solver sweeps in index order and converges all the same, in more
+    passes. The hook is provisional and may change shape.
+
 ## What the solver needs from the model
 
 The solver runs the model's own `modify_state_with_event` once per outcome of
 its random draws, so a model that runs in the comparer runs in the solver, with
 three conditions on top:
 
-- **Infinite horizon.** This version solves `HorizonType.INFINITE` MDPs for
-  their average cost. Finite-horizon models are refused at construction.
+- **Episodes that end (finite horizon).** A finite-horizon model must reach a
+  `FINAL` state with probability one under *every* policy — the assumption is
+  the model's, not checked by the solver, exactly as in legacy DynaPlex. A
+  model with an internal clock (the airplane's `remaining_days`) satisfies it
+  by construction. In a stopping problem, where ending depends on the action,
+  a policy that never stops has no finite total cost; the solver then reports
+  non-convergence (or, when the cycle costs nothing, converges to a
+  meaningless answer). How `time_elapsed` advances is irrelevant under a
+  finite horizon; under an infinite horizon every decision-to-decision
+  transition must advance it by exactly one period.
 - **Discrete, enumerable events.** Every draw in the event step must be a
   discrete one the solver can enumerate — `.sample` on a `DiscreteDist`,
   `AliasSampler` or `CdfSampler`, a one-shot `DiscreteDist.<family>_sample`,
-  or `rng.choice(n)` — and the initial state must be deterministic. This is
-  the promise set `DISCRETE_IDENTIFIABLE_EVENTS`, described under
+  or `rng.choice(n)` — and so must every draw in `get_initial_state` (a random
+  start is enumerated as the initial distribution). This is the promise set
+  `DISCRETE_IDENTIFIABLE_EVENTS`, described under
   [Promises → Discrete identifiable events](../reference/promises.md#discrete-identifiable-events);
   the solver checks it at construction and a continuous draw such as
   `rng.random()` is a compile error naming the line. Any number of draws, in
@@ -256,8 +321,8 @@ enumeration; the default is fast mode, since the model is validated elsewhere.
 computed.
 
 !!! note "Not in this version"
-    Finite-horizon MDPs (expected total cost), parallel sweeps (`workers` must
-    be 0) and persisting the tables to a work directory are planned; see
+    Parallel sweeps (`workers` must be 0) and persisting the tables to a work
+    directory are planned; see
     [Planned features](../community/roadmap.md#exact-solvers).
 
 See the [API reference](../reference/api/exact-solver.md) for all options.
