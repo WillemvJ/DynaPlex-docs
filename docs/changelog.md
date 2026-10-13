@@ -2,6 +2,25 @@
 
 Changes per release, newest first. Breaking changes are marked **breaking**.
 
+## 1.14.1
+
+Patch release for 1.14.0.
+
+### numpy 2.2.x: `import dynaplex` failed
+
+- With numpy 2.2.x installed, `import dynaplex` raised
+  `TypeError: TrajectoryContext.valid: ... is not a DynaML type (Tuple/shape-based
+  numpy.ndarray annotations are not supported ...)`. numpy 2.0, 2.1, 2.3 and 2.4 were
+  unaffected ([issue #10](https://github.com/DynaPlex/DynaPlex/issues/10)).
+- Cause: the annotation parser accepted `numpy.typing.NDArray[dtype]` only when numpy's
+  internal shape alias was spelled `tuple[Any, ...]`; numpy 2.2.x alone spells it
+  `tuple[int, ...]`, so the library's own array-typed fields were rejected as explicit
+  tuple shapes before any user code ran. Any variadic `tuple[X, ...]` is now accepted as
+  the alias. Explicit fixed shapes such as `tuple[int, int]` are still rejected: declare
+  the rank with `Annotated[NDArray[dtype], Rank(n)]`.
+- The release smoke matrix can now pin the numpy the wheel suite runs against, so each
+  supported platform is checked against numpy 2.2 as well as the latest release.
+
 ## 1.14.0
 
 ### DCL: warm-up and restart, legacy defaults, sample provenance

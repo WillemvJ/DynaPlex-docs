@@ -45,6 +45,19 @@ We are building on this in stages:
   this is landing and still stabilizing; a worked example will follow.
 - **Graph neural networks** over multi-tensor features — under development.
 
+## DCL: random tie-breaking and activation-aware root selection
+
+A trained network breaks exact ties between actions by picking the lowest action
+index. Exact ties are structural in models with symmetry (two identical machines,
+two identical orders in a pointer network), and a fixed rule then loads the same
+one every time. Planned: the network's activations return to the engine, action
+selection runs there, and exact ties are broken uniformly at random from the
+trajectory's own policy stream, so the choice stays reproducible and
+independent of the number of workers or the device. The same rule applies to
+ties between candidate actions when DCL labels a state. With the activations on
+the engine side, DCL can also start pruning the candidate set at the root by the
+current policy's own preferences, AlphaZero-style; that is a follow-on.
+
 ## Ports of models from the original DynaPlex
 
 Models written for the original C++ DynaPlex do not run on the new engine,
